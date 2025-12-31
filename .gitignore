@@ -65,10 +65,10 @@ test_rants_for_app.txt
 nul
 
 # Separate projects (not part of main app)
-cli-app/
-nlp/
-scripts/
-requirements.txt
+/cli-app/
+/nlp/
+/scripts/
+/requirements.txt
 
 # Claude Code internal
 .claude/
