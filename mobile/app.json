@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "RantTrack",
-    "slug": "ranttrack",
+    "slug": "rantapp",
     "version": "0.9.0",
     "description": "Privacy-first symptom tracker for chronically ill people. Voice or type how you're feeling—no forms, no tracking, all local.",
     "orientation": "portrait",
