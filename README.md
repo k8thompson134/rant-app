@@ -26,11 +26,11 @@ RantTrack is a symptom tracking app designed specifically for people with ME/CFS
 
 I'm Kate, a software engineering student living with Long COVID for 5 years. I got sick with COVID during my first semester of college in November 2020, and my life has never been the same. I live with debilitating fatigue, brain fog, and chronic pain that interferes with my daily life.
 
-When I went to doctors, they didn't understand the impact of my symptoms or how I was living with worsening symptoms every single day. New symptoms kept appearing, so many that it became overwhelming and hard to keep track of—especially with brain fog.
+When I went to doctors, they didn't understand the impact of my symptoms or how I was living with worsening symptoms every single day. New symptoms kept appearing, so many that it became overwhelming and hard to keep track of especially with brain fog.
 
 I turned to symptom tracking apps, but each one felt overwhelming and wasn't catered to what I needed. The apps I tried were energy-consuming, gamified, and made it hard to get much out of them if I wasn't super consistent. **On my worst days, the very days I NEEDED to be symptom tracking, I was unable to due to my post-exertional malaise symptoms themselves.** I'd end up filling out days later when I was feeling better, but I wasn't always accurately capturing every detail throughout the flares.
 
-After trying several apps, I ended up setting up my own Notion page and tracking when I could ut have never been super consistent with that either.
+After trying several apps, I ended up setting up my own Notion page and tracking when I could but have never been super consistent with that either.
 
 Over the past couple of years, I've really declined. I can't do as much as I used to, even reflecting back a few months. At first, I really gaslit myself about it, thinking I was just depressed, giving up hope, or overthinking it. Those around me always said I was looking better, but I think I was just getting much better at operating at a higher pain level and publicly masking it after years of practice. Even my doctors would remark similarly, even when I was describing the things I was going through.
 
