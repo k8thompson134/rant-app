@@ -22,16 +22,16 @@ By downloading, installing, or using RantTrack, you agree to these Terms. If you
 ## 2. What RantTrack Is (and Isn't)
 
 ### RantTrack IS:
-- ✅ A **symptom tracking tool** to help you log and understand your health patterns
-- ✅ A **communication aid** for sharing symptom histories with your healthcare providers
-- ✅ A **personal health journal** that stays private on your device
+- A **symptom tracking tool** to help you log and understand your health patterns
+- A **communication aid** for sharing symptom histories with your healthcare providers
+- A **personal health journal** that stays private on your device
 
 ### RantTrack IS NOT:
-- ❌ A medical device
-- ❌ A diagnostic tool (we don't diagnose conditions)
-- ❌ Medical advice (we don't tell you what treatments to pursue)
-- ❌ A replacement for professional healthcare
-- ❌ FDA approved or regulated
+- A medical device
+- A diagnostic tool (we don't diagnose conditions)
+- Medical advice (we don't tell you what treatments to pursue)
+- A replacement for professional healthcare
+- FDA approved or regulated
 
 **Important**: Always consult qualified healthcare professionals for medical advice, diagnosis, and treatment. RantTrack is a tracking tool, not a medical authority.
 
@@ -216,23 +216,18 @@ If you don't agree with updated Terms, stop using the app.
 RantTrack's source code is available on GitHub under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 **What this means**:
-- ✅ You can view, modify, and distribute the source code
-- ✅ You can fork the code and create derivative works
-- ✅ Commercial use is allowed
-- ⚠️ **Any derivative works MUST also be open source under GPL-3.0**
-- ⚠️ You must provide source code if you distribute modified versions
-- ⚠️ You cannot make closed-source proprietary versions
+- You can view, modify, and distribute the source code
+- You can fork the code and create derivative works
+- Commercial use is allowed
+- **Any derivative works MUST also be open source under GPL-3.0**
+- You must provide source code if you distribute modified versions
+- You cannot make closed-source proprietary versions
 
 **Why GPL-3.0?**
 This license ensures RantTrack's privacy-first values are preserved. No one can take the code, add tracking, close the source, and sell it. The community can always verify that your data stays private.
 
 **Full license**: https://github.com/k8thompson134/rant-app/blob/main/LICENSE
 
-You may:
-- View the source code
-- Report bugs and security issues
-- Contribute improvements (contributions will also be GPL-3.0)
-- Fork the code (your fork must also be GPL-3.0)
 
 **Open source doesn't mean "no terms"** - you still agree to these Terms when using the app, and the GPL-3.0 license governs what you can do with the source code.
 
@@ -246,8 +241,6 @@ RantTrack may integrate with third-party services (e.g., Google Forms for feedba
 - **Expo** (app development framework) - see [Expo's Terms](https://expo.dev/terms)
 - **Google Forms** (optional feedback submission) - see [Google's Privacy Policy](https://policies.google.com/privacy)
 - **iOS/Android Speech Recognition APIs** (if you use voice input) - see Apple/Google's privacy policies
-
-We don't control these services and aren't responsible for their practices.
 
 ---
 

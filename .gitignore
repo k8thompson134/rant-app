@@ -1,0 +1,74 @@
+# Virtual environment
+venv/
+env/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# Node/React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+.expo-shared/
+*.orig.*
+web-build/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local dev
+*.log
+*.local
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Internal development docs (not for public repo)
+BETA_FEEDBACK_FORM_GUIDE.md
+NEXT_STEPS.md
+CLEANUP_SUMMARY.md
+*_DEMO.md
+
+# Test data and temporary files
+test_rants_for_app.txt
+nul
+
+# Separate projects (not part of main app)
+cli-app/
+nlp/
+scripts/
+requirements.txt
+
+# Claude Code internal
+.claude/
