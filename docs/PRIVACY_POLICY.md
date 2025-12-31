@@ -13,14 +13,14 @@ This is a core principle: **your health data is yours, and it stays yours.**
 
 ## Summary
 
-- ❌ **No data collection** - RantTrack does not collect, store, or transmit your symptom entries
-- ❌ **No analytics** - The app does not track how you use it
-- ❌ **No crash reports** - Bugs and errors are not automatically reported
-- ❌ **No user accounts** - You do not need to create an account to use RantTrack
-- ❌ **No cloud storage** - Your data lives only on your device (no servers, no cloud sync)
-- ❌ **No third-party services** - Your data is not shared with anyone
-- ❌ **No ads** - Your health data will never be monetized
-- ✅ **100% local** - Everything happens on your device, offline, and privately
+- **No data collection** - RantTrack does not collect, store, or transmit your symptom entries
+- **No analytics** - The app does not track how you use it
+- **No crash reports** - Bugs and errors are not automatically reported
+- **No user accounts** - You do not need to create an account to use RantTrack
+- **No cloud storage** - Your data lives only on your device (no servers, no cloud sync)
+- **No third-party services** - Your data is not shared with anyone
+- **No ads** - Your health data will never be monetized
+- **100% local** - Everything happens on your device, offline, and privately
 
 ---
 
@@ -44,14 +44,14 @@ All your symptom entries, rants, and settings are stored in a **local SQLite dat
 
 ### What this means:
 
-✅ **Your data stays on your device forever** (unless you delete the app)
-✅ **No one else can access it** - not us, not Apple, not Google, not anyone
-✅ **Works completely offline** - no internet connection required
-✅ **Your device, your data** - you have complete control
+**Your data stays on your device forever** (unless you delete the app)
+**No one else can access it** - not us, not Apple, not Google, not anyone
+**Works completely offline** - no internet connection required
+**Your device, your data** - you have complete control
 
-❌ **No cloud backup** - if you lose your phone, your data is gone
-❌ **Can't sync between devices** - each device has its own separate database
-❌ **No recovery** - we can't help you restore lost data because we never had it
+**No cloud backup** - if you lose your phone, your data is gone
+**Can't sync between devices** - each device has its own separate database
+**No recovery** - we can't help you restore lost data because we never had it
 
 ---
 
@@ -231,7 +231,7 @@ We're committed to **privacy by default forever**. Any future features that invo
 
 ## International Data Transfers
 
-Your data doesn't cross borders because it doesn't leave your device. 🌍📵
+Your data doesn't cross borders because it doesn't leave your device. 
 
 If we add optional cloud sync in the future, we'll update this policy to explain where servers are located and how data is protected.
 
@@ -241,11 +241,11 @@ If we add optional cloud sync in the future, we'll update this policy to explain
 
 You have the right to:
 
-✅ **Access your data** - it's all on your device, open the app anytime
-✅ **Delete your data** - delete the app or individual entries
-✅ **Export your data** - use the export feature (coming soon)
-✅ **Stop using the app** - no account, no contracts, just delete it
-✅ **Control your privacy** - disable microphone, use offline, your choice
+**Access your data** - it's all on your device, open the app anytime
+**Delete your data** - delete the app or individual entries
+**Export your data** - use the export feature (coming soon)
+**Stop using the app** - no account, no contracts, just delete it
+**Control your privacy** - disable microphone, use offline, your choice
 
 ---
 
@@ -316,10 +316,6 @@ Most health apps collect your data and promise to "keep it secure." We think tha
 - No privacy policies full of loopholes
 
 Just you, your device, and your symptom history. Simple. Private. Yours.
-
----
-
-## Summary
 
 **Your health data is important.** If you choose to use RantTrack, you're entrusting sensitive information about your disability, chronic illness, worst days, and daily struggles to this app.
 
