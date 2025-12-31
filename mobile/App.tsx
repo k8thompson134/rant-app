@@ -29,6 +29,7 @@ import { HistoryScreen } from './src/screens/HistoryScreen';
 import { MonthScreen } from './src/screens/MonthScreen';
 import { ReviewEntryScreen } from './src/screens/ReviewEntryScreen';
 import { QuickAddEntryScreen } from './src/screens/QuickAddEntryScreen';
+import { VoiceRecordingScreen } from './src/screens/VoiceRecordingScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import type { HomeStackParamList, MonthStackParamList, RootTabParamList } from './src/types/navigation';
 import { darkTheme } from './src/theme/colors';
@@ -68,6 +69,15 @@ function HomeStackNavigator() {
           headerTintColor: colors.textPrimary,
         }}
       />
+      <HomeStack.Screen
+        name="VoiceRecording"
+        component={VoiceRecordingScreen}
+        options={{
+          headerShown: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+        }}
+      />
     </HomeStack.Navigator>
   );
 }
@@ -98,6 +108,15 @@ function MonthStackNavigator() {
           },
           headerTintColor: colors.textPrimary,
           presentation: 'modal',
+        }}
+      />
+      <MonthStack.Screen
+        name="VoiceRecording"
+        component={VoiceRecordingScreen}
+        options={{
+          headerShown: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
         }}
       />
     </MonthStack.Navigator>

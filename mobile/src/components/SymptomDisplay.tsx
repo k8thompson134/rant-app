@@ -7,7 +7,6 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { ExtractedSymptom, SYMPTOM_DISPLAY_NAMES, SEVERITY_COLORS } from '../types';
 import { useTheme, useTypography } from '../contexts/AccessibilityContext';
-import { darkTheme } from '../theme/colors';
 
 interface SymptomDisplayProps {
   symptoms: ExtractedSymptom[];
@@ -17,7 +16,7 @@ interface SymptomDisplayProps {
 export function SymptomDisplay({ symptoms, rantText }: SymptomDisplayProps) {
   const colors = useTheme();
   const typography = useTypography();
-  const styles = useMemo(() => createStyles(typography), [typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   if (symptoms.length === 0) {
     return (
       <View style={styles.container}>
@@ -92,7 +91,7 @@ export function SymptomDisplay({ symptoms, rantText }: SymptomDisplayProps) {
   );
 }
 
-const createStyles = (typography: ReturnType<typeof useTypography>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
@@ -105,43 +104,43 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   title: {
     ...typography.pageTitle,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   badge: {
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   badgeText: {
     ...typography.sectionHeader,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
   },
   rantTextContainer: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
   rantTextLabel: {
     ...typography.caption,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 4,
     fontFamily: 'DMSans_500Medium',
   },
   rantText: {
     ...typography.small,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   symptomsList: {
     gap: 12,
   },
   symptomCard: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: darkTheme.bgElevated,
+    borderColor: colors.bgElevated,
   },
   symptomHeader: {
     flexDirection: 'row',
@@ -151,7 +150,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   symptomName: {
     ...typography.bodyMedium,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
   },
   badgeRow: {
@@ -166,7 +165,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   severityBadgeText: {
     ...typography.caption,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
     fontFamily: 'DMSans_500Medium',
     textTransform: 'capitalize',
   },
@@ -177,13 +176,13 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   methodText: {
     ...typography.caption,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
     fontFamily: 'DMSans_500Medium',
     textTransform: 'uppercase',
   },
   matchedText: {
     ...typography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
   emptyState: {
@@ -193,12 +192,12 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   emptyTitle: {
     ...typography.bodyMedium,
     fontSize: 18,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   emptySubtitle: {
     ...typography.small,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
   },
 });

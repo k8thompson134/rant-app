@@ -45,7 +45,14 @@
     },
     "owner": "k8thompson",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "@jamsch/expo-speech-recognition",
+        {
+          "microphonePermission": "RantTrack needs microphone access to record your voice for symptom tracking.",
+          "speechRecognitionPermission": "RantTrack needs speech recognition to convert your voice into text for symptom tracking."
+        }
+      ]
     ],
     "privacy": "public",
     "githubUrl": "https://github.com/k8thompson134/rant-app"

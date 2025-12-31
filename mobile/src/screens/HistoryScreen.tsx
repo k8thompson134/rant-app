@@ -15,13 +15,12 @@ import {
 import { getAllRantEntries, deleteRantEntry } from '../database/operations';
 import { RantEntry, SYMPTOM_DISPLAY_NAMES, SEVERITY_COLORS } from '../types';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
-import { darkTheme } from '../theme/colors';
 
 export function HistoryScreen() {
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
-  const styles = useMemo(() => createStyles(typography), [typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [entries, setEntries] = useState<RantEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -172,21 +171,21 @@ export function HistoryScreen() {
   );
 }
 
-const createStyles = (typography: ReturnType<typeof useTypography>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkTheme.bgPrimary,
+    backgroundColor: colors.bgPrimary,
   },
   listContent: {
     padding: 16,
     gap: 12,
   },
   entryCard: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: darkTheme.bgElevated,
+    borderColor: colors.bgElevated,
   },
   entryHeader: {
     flexDirection: 'row',
@@ -196,7 +195,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   entryDate: {
     ...typography.caption,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     fontFamily: 'DMSans_500Medium',
   },
   deleteButton: {
@@ -205,12 +204,12 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   deleteButtonText: {
     ...typography.caption,
-    color: darkTheme.severityRough,
+    color: colors.severityRough,
     fontFamily: 'DMSans_500Medium',
   },
   entryText: {
     ...typography.small,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   symptomTags: {
@@ -221,7 +220,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   symptomTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -234,12 +233,12 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   symptomTagText: {
     ...typography.caption,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     fontFamily: 'DMSans_500Medium',
   },
   moreSymptoms: {
     ...typography.caption,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     alignSelf: 'center',
     marginLeft: 4,
   },
@@ -252,12 +251,12 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   emptyTitle: {
     ...typography.bodyMedium,
     fontSize: 18,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   emptyText: {
     ...typography.small,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
   },
 });

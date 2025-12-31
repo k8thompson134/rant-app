@@ -3,7 +3,7 @@
  * Text input for entering how you're feeling
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   TextInput,
@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import { VoiceInput } from './VoiceInput';
 import { RecordingOverlay } from './RecordingOverlay';
-import Voice from '@react-native-voice/voice';
+import { Ionicons } from '@expo/vector-icons';
+import { ExpoSpeechRecognitionModule } from '@jamsch/expo-speech-recognition';
 import { useTheme, useTypography, useAccessibilitySettings } from '../contexts/AccessibilityContext';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { clearDraftEntry } from '../database/operations';
-import { darkTheme } from '../theme/colors';
 import { typography as baseTypography } from '../theme/typography';
 
 interface RantInputProps {
@@ -26,11 +26,13 @@ interface RantInputProps {
   placeholder?: string;
   isLoading?: boolean;
   initialText?: string; // For draft recovery
+  onVoicePress?: () => void; // Optional callback for voice input (navigates to VoiceRecordingScreen)
 }
 
-export function RantInput({ onSubmit, placeholder, isLoading, initialText }: RantInputProps) {
+export function RantInput({ onSubmit, placeholder, isLoading, initialText, onVoicePress }: RantInputProps) {
   const colors = useTheme();
   const typography = useTypography();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [text, setText] = useState(initialText || '');
   const [isRecording, setIsRecording] = useState(false);
   const { settings } = useAccessibilitySettings();
@@ -74,7 +76,7 @@ export function RantInput({ onSubmit, placeholder, isLoading, initialText }: Ran
   const handleOverlayTap = async () => {
     // Stop recording when user taps the overlay
     try {
-      await Voice.stop();
+      ExpoSpeechRecognitionModule.stop();
       setIsRecording(false);
     } catch (error) {
       console.error('Failed to stop recording:', error);
@@ -120,11 +122,26 @@ export function RantInput({ onSubmit, placeholder, isLoading, initialText }: Ran
         )}
       </View>
       <View style={styles.actions}>
-        <VoiceInput
-          onResult={handleVoiceResult}
-          onRecordingStateChange={handleRecordingStateChange}
-          disabled={isLoading}
-        />
+        {onVoicePress ? (
+          // Use navigation to VoiceRecordingScreen
+          <TouchableOpacity
+            style={styles.voiceButton}
+            onPress={onVoicePress}
+            disabled={isLoading}
+            accessible={true}
+            accessibilityLabel="Start voice input"
+            accessibilityRole="button"
+          >
+            <Ionicons name="mic" size={24} color={colors.accentPrimary} />
+          </TouchableOpacity>
+        ) : (
+          // Use inline voice input (legacy)
+          <VoiceInput
+            onResult={handleVoiceResult}
+            onRecordingStateChange={handleRecordingStateChange}
+            disabled={isLoading}
+          />
+        )}
         <TouchableOpacity
           style={[styles.button, (!text.trim() || isLoading) && styles.buttonDisabled]}
           onPress={handleSubmit}
@@ -143,7 +160,7 @@ export function RantInput({ onSubmit, placeholder, isLoading, initialText }: Ran
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
@@ -154,11 +171,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 16,
     padding: 16,
     ...baseTypography.body,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     minHeight: 150,
   },
   autoSaveIndicator: {
@@ -166,7 +183,7 @@ const styles = StyleSheet.create({
     bottom: 12,
     right: 16,
     ...baseTypography.caption,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     opacity: 0.7,
   },
   actions: {
@@ -176,21 +193,29 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
     padding: 14,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonDisabled: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     opacity: 0.8,
   },
   buttonText: {
     ...baseTypography.button,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
   },
   buttonTextDisabled: {
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
+  },
+  voiceButton: {
+    width: 48,
+    height: 48,
+    backgroundColor: colors.bgElevated,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

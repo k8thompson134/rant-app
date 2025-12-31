@@ -4,16 +4,16 @@
  * Helps users focus on speaking without text distraction
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LavaLampAnimation } from './animations/LavaLampAnimation';
-import { useTheme, useTypography } from '../contexts/AccessibilityContext';
-import { darkTheme } from '../theme/colors';
+import { useTheme, useTypography, useAccessibilitySettings } from '../contexts/AccessibilityContext';
 import { typography as baseTypography } from '../theme/typography';
 
 interface RecordingOverlayProps {
@@ -23,6 +23,8 @@ interface RecordingOverlayProps {
 export function RecordingOverlay({ onTap }: RecordingOverlayProps) {
   const colors = useTheme();
   const typography = useTypography();
+  const { settings } = useAccessibilitySettings();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
@@ -43,7 +45,14 @@ export function RecordingOverlay({ onTap }: RecordingOverlayProps) {
     <TouchableWithoutFeedback onPress={onTap}>
       <View style={styles.container}>
         <View style={styles.animationContainer}>
-          <LavaLampAnimation />
+          {settings.reducedMotion ? (
+            <View style={styles.staticIndicator}>
+              <Ionicons name="mic" size={80} color={colors.accentPrimary} />
+              <Text style={styles.recordingText}>Recording</Text>
+            </View>
+          ) : (
+            <LavaLampAnimation />
+          )}
         </View>
 
         <View style={styles.controls}>
@@ -55,10 +64,10 @@ export function RecordingOverlay({ onTap }: RecordingOverlayProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 16,
     padding: 20,
     justifyContent: 'center',
@@ -71,13 +80,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   animationContainer: {
     flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  staticIndicator: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  recordingText: {
+    ...typography.largeHeader,
+    color: colors.accentPrimary,
   },
   controls: {
     marginTop: 16,
@@ -86,11 +104,11 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: 20,
     fontVariant: ['tabular-nums'],
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   hint: {
     ...baseTypography.caption,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
   },
 });

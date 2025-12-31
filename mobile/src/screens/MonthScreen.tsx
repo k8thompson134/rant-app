@@ -17,7 +17,6 @@ import { useTheme, useTypography, useTouchTargetSize } from '../contexts/Accessi
 import { getAllRantEntries } from '../database/operations';
 import { RantEntry, SYMPTOM_DISPLAY_NAMES, SEVERITY_COLORS } from '../types';
 import type { MonthStackParamList } from '../types/navigation';
-import { darkTheme } from '../theme/colors';
 
 type Props = NativeStackScreenProps<MonthStackParamList, 'MonthView'>;
 
@@ -31,7 +30,7 @@ export function MonthScreen({ navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
-  const styles = useMemo(() => createStyles(typography), [typography]);
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [entries, setEntries] = useState<RantEntry[]>([]);
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate());
@@ -83,7 +82,8 @@ export function MonthScreen({ navigation }: Props) {
     const month = currentDate.getMonth();
     const selectedDate = new Date(year, month, selectedDay);
 
-    navigation.navigate('QuickAddEntry', { date: selectedDate });
+    // Pass timestamp instead of Date object for serialization
+    navigation.navigate('QuickAddEntry', { dateTimestamp: selectedDate.getTime() });
   };
 
   const getMonthName = () => {
@@ -321,10 +321,10 @@ export function MonthScreen({ navigation }: Props) {
   );
 }
 
-const createStyles = (typography: ReturnType<typeof useTypography>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkTheme.bgPrimary,
+    backgroundColor: colors.bgPrimary,
   },
   scrollView: {
     flex: 1,
@@ -342,7 +342,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   monthTitle: {
     ...typography.largeDisplay,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   calendarContainer: {
     marginBottom: 20,
@@ -355,7 +355,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     flex: 1,
     textAlign: 'center',
     ...typography.caption,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -373,19 +373,19 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     justifyContent: 'center',
   },
   dayCircleToday: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderWidth: 2,
-    borderColor: darkTheme.accentPrimary,
+    borderColor: colors.accentPrimary,
   },
   dayCircleSelected: {
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
   },
   dayNumber: {
     ...typography.small,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   dayNumberSelected: {
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
     fontFamily: 'DMSans_700Bold',
   },
   severityDot: {
@@ -405,7 +405,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   sectionTitle: {
     ...typography.sectionHeader,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     textTransform: 'none',
     marginBottom: 0,
   },
@@ -418,14 +418,14 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   addEntryText: {
     ...typography.small,
-    color: darkTheme.accentPrimary,
+    color: colors.accentPrimary,
     fontFamily: 'DMSans_500Medium',
   },
   emptyAddButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 12,
     padding: 14,
     gap: 8,
@@ -433,11 +433,11 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   emptyAddText: {
     ...typography.small,
-    color: darkTheme.accentPrimary,
+    color: colors.accentPrimary,
     fontFamily: 'DMSans_500Medium',
   },
   entryCard: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -451,7 +451,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   entryTime: {
     ...typography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   entrySeverity: {
     ...typography.small,
@@ -460,7 +460,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   entryText: {
     ...typography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -473,11 +473,11 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
   },
   symptomChipText: {
     ...typography.caption,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     fontFamily: 'DMSans_500Medium',
   },
 });

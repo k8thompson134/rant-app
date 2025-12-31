@@ -50,13 +50,7 @@ export function SettingsScreen() {
   };
 
   const handlePrivacyPolicy = () => {
-    Alert.alert(
-      'Privacy Policy',
-      'The privacy policy will be available at:\n\nhttps://k8thompson134.github.io/rant-app/PRIVACY_POLICY\n\nOnce you host the privacy policy document, this link will work.',
-      [{ text: 'OK' }]
-    );
-    // TODO: Once privacy policy is hosted, use:
-    // Linking.openURL('https://k8thompson134.github.io/rant-app/PRIVACY_POLICY');
+    Linking.openURL('https://k8thompson134.github.io/rant-app/PRIVACY_POLICY');
   };
 
   const getDeviceInfo = () => {

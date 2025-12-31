@@ -24,9 +24,10 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'H
 
 interface HomeScreenProps {
   navigation: HomeScreenNavigationProp;
+  route: { params?: { voiceText?: string } };
 }
 
-export function HomeScreen({ navigation }: HomeScreenProps) {
+export function HomeScreen({ navigation, route }: HomeScreenProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [yesterdayEntry, setYesterdayEntry] = useState<RantEntry | null>(null);
   const [draftText, setDraftText] = useState<string | undefined>(undefined);
@@ -42,6 +43,15 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     loadYesterdayEntry();
     checkForDraft();
   }, []);
+
+  // Handle voice input result from VoiceRecordingScreen
+  useEffect(() => {
+    if (route.params?.voiceText) {
+      const voiceText = route.params.voiceText;
+      // Append voice text to draft
+      setDraftText((prev) => (prev ? `${prev} ${voiceText}` : voiceText));
+    }
+  }, [route.params?.voiceText]);
 
   const loadYesterdayEntry = async () => {
     try {
@@ -170,6 +180,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     });
   };
 
+  const handleVoicePress = () => {
+    navigation.navigate('VoiceRecording', { returnScreen: 'HomeInput' });
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -196,6 +210,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             isLoading={isSaving}
             placeholder="Type or speak about how you're feeling..."
             initialText={draftText}
+            onVoicePress={handleVoicePress}
           />
         </View>
       </ScrollView>

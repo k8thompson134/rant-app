@@ -3,7 +3,7 @@
  * Used when tapping a day in the calendar view
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,28 +21,57 @@ import { saveRantEntry } from '../database/operations';
 import { SymptomChip } from '../components/SymptomChip';
 import { SeverityPicker } from '../components/SeverityPicker';
 import { AddSymptomModal } from '../components/AddSymptomModal';
+import { extractSymptoms } from '../nlp/extractor';
+import type { MonthStackParamList } from '../types/navigation';
 import { darkTheme } from '../theme/colors';
 
-type RootStackParamList = {
-  QuickAddEntry: {
-    date: Date;
-  };
-};
-
-type Props = NativeStackScreenProps<RootStackParamList, 'QuickAddEntry'>;
+type Props = NativeStackScreenProps<MonthStackParamList, 'QuickAddEntry'>;
 
 export function QuickAddEntryScreen({ route, navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
-  const styles = useMemo(() => createStyles(typography), [typography]);
-  const { date } = route.params;
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const date = new Date(route.params.dateTimestamp);
   const [symptoms, setSymptoms] = useState<EditableSymptom[]>([]);
   const [notes, setNotes] = useState('');
   const [showAddSymptom, setShowAddSymptom] = useState(false);
   const [editingSymptom, setEditingSymptom] = useState<EditableSymptom | null>(null);
   const [showSeverityPicker, setShowSeverityPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Handle voice text returned from VoiceRecordingScreen
+  useEffect(() => {
+    if (route.params.voiceText) {
+      const text = route.params.voiceText;
+
+      // Set the notes with the voice input
+      setNotes(text);
+
+      // Extract symptoms from voice input
+      const extractionResult = extractSymptoms(text);
+      console.log('Extracted symptoms from voice:', extractionResult.symptoms);
+
+      // Add extracted symptoms to the list with IDs
+      const newSymptoms: EditableSymptom[] = extractionResult.symptoms.map((symptom, index) => ({
+        ...symptom,
+        id: `${Date.now()}-${index}`,
+      }));
+
+      // Merge with existing symptoms, avoiding duplicates
+      const mergedSymptoms = [...symptoms];
+      newSymptoms.forEach((newSymptom) => {
+        const exists = mergedSymptoms.some(
+          (existing) => existing.symptom === newSymptom.symptom
+        );
+        if (!exists) {
+          mergedSymptoms.push(newSymptom);
+        }
+      });
+
+      setSymptoms(mergedSymptoms);
+    }
+  }, [route.params.voiceText]);
 
   const formatDate = () => {
     const today = new Date();
@@ -95,6 +124,12 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
     setSymptoms(symptoms.filter((s) => s !== symptom));
   };
 
+  const handleVoiceInput = () => {
+    navigation.navigate('VoiceRecording', {
+      returnScreen: 'QuickAddEntry',
+    });
+  };
+
   const handleSave = async () => {
     if (symptoms.length === 0) {
       Alert.alert('No symptoms', 'Please add at least one symptom');
@@ -142,7 +177,12 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
             <Text style={styles.title}>Quick entry</Text>
             <Text style={styles.date}>{formatDate()}</Text>
           </View>
-          <View style={styles.placeholder} />
+          <TouchableOpacity
+            onPress={handleVoiceInput}
+            style={[styles.voiceButton, { minHeight: touchTargetSize, minWidth: touchTargetSize }]}
+          >
+            <Ionicons name="mic" size={24} color={colors.accentPrimary} />
+          </TouchableOpacity>
         </View>
 
         {/* Symptoms Section */}
@@ -234,10 +274,10 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
   );
 }
 
-const createStyles = (typography: ReturnType<typeof useTypography>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkTheme.bgPrimary,
+    backgroundColor: colors.bgPrimary,
   },
   scrollView: {
     flex: 1,
@@ -253,7 +293,15 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.bgSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -263,15 +311,12 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   title: {
     ...typography.largeDisplay,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   date: {
     ...typography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
-  },
-  placeholder: {
-    width: 40,
   },
   section: {
     marginBottom: 24,
@@ -285,19 +330,19 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   sectionLabel: {
     ...typography.caption,
     fontFamily: 'DMSans_500Medium',
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   badge: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
   badgeText: {
     ...typography.caption,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     fontFamily: 'DMSans_500Medium',
   },
   symptomChipsContainer: {
@@ -310,22 +355,22 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 12,
     padding: 14,
     gap: 8,
   },
   addButtonText: {
     ...typography.small,
-    color: darkTheme.accentPrimary,
+    color: colors.accentPrimary,
     fontFamily: 'DMSans_500Medium',
   },
   notesInput: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 12,
     padding: 14,
     ...typography.small,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     minHeight: 100,
     marginTop: 8,
   },
@@ -334,29 +379,29 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     gap: 12,
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: darkTheme.bgElevated,
+    borderTopColor: colors.bgElevated,
   },
   primaryButton: {
     flex: 2,
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
     padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
   primaryButtonText: {
     ...typography.button,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
   secondaryButtonText: {
     ...typography.button,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   buttonDisabled: {
     opacity: 0.5,

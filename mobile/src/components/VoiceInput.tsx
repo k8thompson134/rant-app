@@ -3,18 +3,18 @@
  * Microphone button for voice-to-text input
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Platform,
-  PermissionsAndroid,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Voice from '@react-native-voice/voice';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from '@jamsch/expo-speech-recognition';
 import { useTheme, useTouchTargetSize } from '../contexts/AccessibilityContext';
-import { darkTheme } from '../theme/colors';
 
 interface VoiceInputProps {
   onResult: (text: string) => void;
@@ -25,125 +25,82 @@ interface VoiceInputProps {
 export function VoiceInput({ onResult, disabled, onRecordingStateChange }: VoiceInputProps) {
   const colors = useTheme();
   const touchTargetSize = useTouchTargetSize();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isRecording, setIsRecording] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(false);
 
-  useEffect(() => {
-    const initVoice = async () => {
-      // Request microphone permission on Android
-      if (Platform.OS === 'android') {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-            {
-              title: 'Microphone Permission',
-              message: 'RantTrack needs access to your microphone for voice input.',
-              buttonNeutral: 'Ask Me Later',
-              buttonNegative: 'Cancel',
-              buttonPositive: 'OK',
-            }
-          );
-          console.log('Microphone permission:', granted);
-          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-            console.log('Microphone permission denied');
-            setIsAvailable(false);
-            return;
-          }
-        } catch (err) {
-          console.error('Permission request error:', err);
-          setIsAvailable(false);
-          return;
-        }
-      }
-
-      // Check if voice recognition is available
-      Voice.isAvailable()
-        .then((available) => {
-          console.log('Voice.isAvailable() result:', available);
-          setIsAvailable(!!available);
-        })
-        .catch((error) => {
-          console.error('Voice.isAvailable() error:', error);
-          setIsAvailable(false);
-        });
-
-      // Set up voice event handlers
-      Voice.onSpeechStart = onSpeechStart;
-      Voice.onSpeechEnd = onSpeechEnd;
-      Voice.onSpeechResults = onSpeechResults;
-      Voice.onSpeechError = onSpeechError;
-    };
-
-    initVoice();
-
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, []);
-
-  const onSpeechStart = () => {
+  // Handle speech recognition events
+  useSpeechRecognitionEvent('start', () => {
     console.log('Speech started');
-  };
+    setIsRecording(true);
+    onRecordingStateChange?.(true);
+  });
 
-  const onSpeechEnd = () => {
+  useSpeechRecognitionEvent('end', () => {
     console.log('Speech ended');
     setIsRecording(false);
     onRecordingStateChange?.(false);
-  };
+  });
 
-  const onSpeechResults = (event: any) => {
-    console.log('Speech results:', event.value);
-    if (event.value && event.value.length > 0) {
-      const recognizedText = event.value[0];
-      onResult(recognizedText);
+  useSpeechRecognitionEvent('result', (event) => {
+    console.log('Speech result:', event);
+
+    if (event.results && event.results.length > 0) {
+      const transcript = event.results[0]?.transcript;
+      if (transcript && transcript.trim()) {
+        // Only use final results
+        if (event.isFinal) {
+          onResult(transcript);
+        }
+      }
     }
-  };
+  });
 
-  const onSpeechError = (event: any) => {
-    console.log('Speech error:', event.error);
+  useSpeechRecognitionEvent('error', (event) => {
+    console.log('Speech error:', event);
+    setIsRecording(false);
+    onRecordingStateChange?.(false);
 
-    // Ignore common non-critical errors that happen during normal usage
-    const errorCode = event.error?.code;
-    const errorMessage = event.error?.message || '';
-
-    // These are normal - user stopped speaking or paused
-    const ignorableErrors = [
-      'No speech input',
-      'no-speech',
-      '7', // ERROR_NO_MATCH - no recognition result
-      '6', // ERROR_SPEECH_TIMEOUT
-    ];
-
-    const shouldIgnore = ignorableErrors.some(err =>
-      errorMessage.includes(err) || errorCode === err || String(errorCode) === err
-    );
-
-    // Don't stop recording for ignorable errors - let user keep talking
-    if (!shouldIgnore) {
-      setIsRecording(false);
-      onRecordingStateChange?.(false);
-
+    // Handle different error types
+    if (event.error === 'not-allowed') {
+      Alert.alert(
+        'Permission Denied',
+        'Microphone permission is required for voice input.'
+      );
+    } else if (event.error !== 'no-speech') {
+      // Don't show alert for no-speech, user just needs to try again
       Alert.alert(
         'Voice Input Error',
-        'Failed to start voice recognition. Please try again.'
+        'Voice recognition encountered an error. Please try again.'
       );
     }
-  };
+  });
 
   const startRecording = async () => {
-    if (!isAvailable) {
-      Alert.alert(
-        'Voice Input Not Available',
-        'Voice recognition is not available on this device. Please check that microphone permissions are granted.\n\nYou can still type your rant manually!',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
     try {
+      // Request permissions
+      const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+
+      if (!result.granted) {
+        Alert.alert(
+          'Permission Required',
+          'Microphone permission is needed for voice input. You can still type your rant manually!',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       setIsRecording(true);
       onRecordingStateChange?.(true);
-      await Voice.start(Platform.OS === 'ios' ? 'en-US' : 'en-US');
+
+      // Start speech recognition with extended settings
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: false,
+        maxAlternatives: 1,
+        continuous: true, // Keep listening continuously
+        requiresOnDeviceRecognition: false,
+        addsPunctuation: true,
+      });
     } catch (error) {
       console.error('Failed to start recording:', error);
       setIsRecording(false);
@@ -154,7 +111,7 @@ export function VoiceInput({ onResult, disabled, onRecordingStateChange }: Voice
 
   const stopRecording = async () => {
     try {
-      await Voice.stop();
+      ExpoSpeechRecognitionModule.stop();
       setIsRecording(false);
       onRecordingStateChange?.(false);
     } catch (error) {
@@ -195,17 +152,17 @@ export function VoiceInput({ onResult, disabled, onRecordingStateChange }: Voice
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>) => StyleSheet.create({
   button: {
     width: 48,
     height: 48,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonRecording: {
-    backgroundColor: darkTheme.accentLight,
+    backgroundColor: colors.accentLight,
   },
   buttonDisabled: {
     opacity: 0.5,

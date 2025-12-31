@@ -8,10 +8,15 @@ import { ExtractionResult } from './index';
  * Home Stack Navigator - handles rant input and review flow
  */
 export type HomeStackParamList = {
-  HomeInput: undefined;
+  HomeInput: {
+    voiceText?: string;
+  } | undefined;
   ReviewEntry: {
     rantText: string;
     extractionResult: ExtractionResult;
+  };
+  VoiceRecording: {
+    returnScreen: string;
   };
 };
 
@@ -21,7 +26,11 @@ export type HomeStackParamList = {
 export type MonthStackParamList = {
   MonthView: undefined;
   QuickAddEntry: {
-    date: Date;
+    dateTimestamp: number;
+    voiceText?: string;
+  };
+  VoiceRecording: {
+    returnScreen: string;
   };
 };
 

@@ -158,7 +158,7 @@ npx expo run:android
 - [ ] Data export (CSV, PDF)
 - [ ] Symptom trends visualization
 - [ ] Custom symptom vocabulary
-- [ ] Light theme option
+- [x] Light theme option
 
 ### v2.0 (Future)
 - [ ] Pattern detection (e.g., "You tend to crash 1-2 days after physical exertion")

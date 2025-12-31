@@ -4,7 +4,7 @@
  * Minimal taps, large touch targets, no typing required
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import { COMMON_SYMPTOMS, COMMON_SYMPTOM_LABELS, COMMON_SYMPTOM_ICONS, CommonSym
 import { saveRantEntry } from '../database/operations';
 import type { ExtractedSymptom, Severity } from '../types';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
-import { darkTheme } from '../theme/colors';
 import { typography as baseTypography } from '../theme/typography';
 
 interface QuickCheckInModalProps {
@@ -36,6 +35,7 @@ interface SelectedSymptom {
 export function QuickCheckInModal({ visible, onClose, onSave }: QuickCheckInModalProps) {
   const colors = useTheme();
   const typography = useTypography();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [selectedSymptoms, setSelectedSymptoms] = useState<SelectedSymptom[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const touchTargetSize = useTouchTargetSize();
@@ -193,25 +193,25 @@ export function QuickCheckInModal({ visible, onClose, onSave }: QuickCheckInModa
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkTheme.bgPrimary,
+    backgroundColor: colors.bgPrimary,
   },
   header: {
     padding: 20,
     paddingTop: 60,
     borderBottomWidth: 1,
-    borderBottomColor: darkTheme.bgElevated,
+    borderBottomColor: colors.bgElevated,
   },
   title: {
     ...baseTypography.largeDisplay,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     ...baseTypography.body,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   closeButton: {
     position: 'absolute',
@@ -232,25 +232,25 @@ const styles = StyleSheet.create({
   },
   symptomButton: {
     width: '47%',
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     gap: 8,
     borderWidth: 2,
-    borderColor: darkTheme.bgElevated,
+    borderColor: colors.bgElevated,
   },
   symptomLabel: {
     ...baseTypography.bodyMedium,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   symptomLabelSelected: {
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
   },
   severityBadge: {
     ...baseTypography.caption,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
     opacity: 0.8,
     textTransform: 'uppercase',
     fontSize: 10,
@@ -258,23 +258,23 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: darkTheme.bgElevated,
+    borderTopColor: colors.bgElevated,
   },
   saveButton: {
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     opacity: 0.5,
   },
   saveButtonText: {
     ...baseTypography.button,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
   },
   saveButtonTextDisabled: {
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
   },
 });

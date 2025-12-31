@@ -3,12 +3,11 @@
  * Modal for selecting symptom severity level
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { Severity, SEVERITY_COLORS } from '../types';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { darkTheme } from '../theme/colors';
 import { typography as baseTypography } from '../theme/typography';
 
 interface SeverityPickerProps {
@@ -28,6 +27,7 @@ export function SeverityPicker({
 }: SeverityPickerProps) {
   const colors = useTheme();
   const typography = useTypography();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const touchTargetSize = useTouchTargetSize();
 
   const handleSelect = (severity: Severity | null) => {
@@ -120,7 +120,7 @@ export function SeverityPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 16,
     padding: 20,
     width: '100%',
@@ -138,22 +138,22 @@ const styles = StyleSheet.create({
   title: {
     ...baseTypography.bodyMedium,
     fontSize: 18,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 20,
     textAlign: 'center',
   },
   severityButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     padding: 16,
     borderRadius: 12,
     marginBottom: TOUCH_TARGET_SPACING,
   },
   severityButtonActive: {
-    backgroundColor: darkTheme.accentLight,
+    backgroundColor: colors.accentLight,
     borderWidth: 2,
-    borderColor: darkTheme.accentPrimary,
+    borderColor: colors.accentPrimary,
   },
   indicator: {
     width: 24,
@@ -172,17 +172,17 @@ const styles = StyleSheet.create({
   },
   severityLabel: {
     ...baseTypography.bodyMedium,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   clearButton: {
     padding: 14,
     borderRadius: 12,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     marginTop: 8,
   },
   clearButtonText: {
     ...baseTypography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   cancelButton: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     ...baseTypography.small,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
   },
 });

@@ -3,12 +3,11 @@
  * Quick action buttons for common patterns
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { darkTheme } from '../theme/colors';
 import { typography as baseTypography } from '../theme/typography';
 
 interface QuickActionChipsProps {
@@ -24,6 +23,7 @@ export function QuickActionChips({
 }: QuickActionChipsProps) {
   const colors = useTheme();
   const typography = useTypography();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const touchTargetSize = useTouchTargetSize();
 
   return (
@@ -78,7 +78,7 @@ export function QuickActionChips({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flexGrow: 0,
   },
@@ -92,9 +92,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderWidth: 1,
-    borderColor: darkTheme.textMuted,
+    borderColor: colors.textMuted,
     gap: 6,
   },
   chipDisabled: {
@@ -102,13 +102,13 @@ const styles = StyleSheet.create({
   },
   chipText: {
     ...baseTypography.caption,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   chipTextDisabled: {
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   badge: {
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 6,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   badgeText: {
     ...baseTypography.caption,
     fontSize: 9,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
     fontFamily: 'DMSans_500Medium',
   },
 });

@@ -23,7 +23,6 @@ import { SeverityPicker } from '../components/SeverityPicker';
 import { AddSymptomModal } from '../components/AddSymptomModal';
 import { useTouchTargetSize, useTheme, useTypography } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { darkTheme } from '../theme/colors';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'ReviewEntry'>;
 
@@ -33,8 +32,8 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
 
-  // Create dynamic styles based on current typography
-  const styles = useMemo(() => createStyles(typography), [typography]);
+  // Create dynamic styles based on current typography and theme
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
   // Convert extracted symptoms to editable format with IDs
   const [editedText, setEditedText] = useState(rantText);
@@ -290,10 +289,10 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
   );
 }
 
-const createStyles = (typography: ReturnType<typeof useTypography>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkTheme.bgPrimary,
+    backgroundColor: colors.bgPrimary,
   },
   scrollView: {
     flex: 1,
@@ -308,19 +307,19 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   title: {
     ...typography.pageTitle,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   date: {
     ...typography.sectionHeader,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   // Quick Summary Card
   summaryCard: {
-    backgroundColor: darkTheme.accentLight,
+    backgroundColor: colors.accentLight,
     borderRadius: 20,
     padding: 20,
     borderWidth: 2,
-    borderColor: darkTheme.accentPrimary + '20',
+    borderColor: colors.accentPrimary + '20',
   },
   summaryHeader: {
     flexDirection: 'row',
@@ -331,7 +330,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   summaryTitle: {
     ...typography.caption,
     fontFamily: 'DMSans_500Medium',
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -341,7 +340,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   tapToEditHint: {
     ...typography.caption,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     fontStyle: 'italic',
   },
@@ -352,21 +351,21 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   topSymptomText: {
     ...typography.bodyMedium,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
   },
   severityText: {
     ...typography.body,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   painDetailText: {
     ...typography.caption,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     fontStyle: 'italic',
   },
   moreSymptoms: {
     ...typography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -375,32 +374,32 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: darkTheme.accentPrimary,
+    backgroundColor: colors.accentPrimary,
     padding: 18,
     borderRadius: 16,
     gap: 10,
   },
   quickSaveButtonText: {
     ...typography.largeHeader,
-    color: darkTheme.bgPrimary,
+    color: colors.bgPrimary,
   },
   // Edit Details Toggle
   editToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     padding: 14,
     borderRadius: 12,
     gap: 8,
   },
   editToggleText: {
     ...typography.bodyMedium,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   // Collapsible Edit Section
   card: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 16,
     padding: 16,
   },
@@ -413,27 +412,27 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   sectionLabel: {
     ...typography.caption,
     fontFamily: 'DMSans_500Medium',
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   badge: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
   badgeText: {
     ...typography.caption,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     fontFamily: 'DMSans_500Medium',
   },
   textInput: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 12,
     padding: 14,
     ...typography.body,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     minHeight: 150,
     textAlignVertical: 'top',
   },
@@ -444,7 +443,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   emptyText: {
     ...typography.small,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: 20,
   },
@@ -453,7 +452,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: darkTheme.textMuted,
+    borderColor: colors.textMuted,
     borderStyle: 'dashed',
     borderRadius: 12,
     padding: 12,
@@ -462,14 +461,14 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   addButtonIcon: {
     fontSize: 18,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   addButtonText: {
     ...typography.small,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   reRecordButton: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     padding: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -477,7 +476,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>) => StyleShee
   },
   reRecordButtonText: {
     ...typography.button,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
   },
   buttonDisabled: {
     opacity: 0.5,

@@ -3,7 +3,7 @@
  * Modal for manually adding symptoms with search/filter
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,6 @@ import { EditableSymptom, Severity, SYMPTOM_DISPLAY_NAMES } from '../types';
 import { SeverityPicker } from './SeverityPicker';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { darkTheme } from '../theme/colors';
 import { typography as baseTypography } from '../theme/typography';
 
 interface AddSymptomModalProps {
@@ -35,6 +34,7 @@ export function AddSymptomModal({
 }: AddSymptomModalProps) {
   const colors = useTheme();
   const typography = useTypography();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const touchTargetSize = useTouchTargetSize();
   const [searchText, setSearchText] = useState('');
   const [selectedSymptom, setSelectedSymptom] = useState<string | null>(null);
@@ -145,7 +145,7 @@ export function AddSymptomModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: darkTheme.bgSecondary,
+    backgroundColor: colors.bgSecondary,
     borderRadius: 16,
     padding: 20,
     width: '100%',
@@ -170,19 +170,19 @@ const styles = StyleSheet.create({
   title: {
     ...baseTypography.bodyMedium,
     fontSize: 18,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   closeButton: {
     fontSize: 32,
-    color: darkTheme.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '300',
   },
   searchInput: {
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     borderRadius: 12,
     padding: 12,
     ...baseTypography.body,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   symptomList: {
@@ -191,17 +191,17 @@ const styles = StyleSheet.create({
   symptomItem: {
     padding: 16,
     borderRadius: 12,
-    backgroundColor: darkTheme.bgElevated,
+    backgroundColor: colors.bgElevated,
     marginBottom: TOUCH_TARGET_SPACING / 2,
     justifyContent: 'center',
   },
   symptomName: {
     ...baseTypography.body,
-    color: darkTheme.textPrimary,
+    color: colors.textPrimary,
   },
   emptyText: {
     ...baseTypography.small,
-    color: darkTheme.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: 20,
   },
