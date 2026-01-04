@@ -90,46 +90,47 @@ export const darkTheme: ThemeColors = {
 
 /**
  * Light Mode Theme
+ * Warm, cream-based palette inspired by the Review Entry screen
  */
 export const lightTheme: ThemeColors = {
-  // Backgrounds
-  bgApp: '#E8E2DC',
-  bgPrimary: '#FFFBF8',
-  bgSecondary: '#F5F0EB',
-  bgElevated: '#E8E2DC',
+  // Backgrounds - warm cream tones
+  bgApp: '#F5EDE6',
+  bgPrimary: '#FDF9F6',
+  bgSecondary: '#F8F1EA',
+  bgElevated: '#EDE5DC',
 
   // Text
-  textPrimary: '#1C1917',
-  textSecondary: '#57534E',
-  textMuted: '#A8A29E',
+  textPrimary: '#2C2420',
+  textSecondary: '#6B5D54',
+  textMuted: '#A89B91',
 
-  // Accent (darker for light mode contrast)
-  accentPrimary: '#A8725E',
-  accentLight: 'rgba(168, 114, 94, 0.12)',
+  // Accent (warm terracotta)
+  accentPrimary: '#B5715A',
+  accentLight: 'rgba(181, 113, 90, 0.15)',
 
-  // Symptom Colors (adjusted for light bg)
-  symptomFatigue: '#C4B89E',
-  symptomPem: '#A8725E',
-  symptomBrainfog: '#6FA599',
-  symptomPain: '#D4886E',
-  symptomTeal: '#6FA599',
-  symptomLavender: '#9A8DAE',
-  symptomCoral: '#D4886E',
+  // Symptom Colors (richer for light bg)
+  symptomFatigue: '#B8A888',
+  symptomPem: '#B5715A',
+  symptomBrainfog: '#5A9E94',
+  symptomPain: '#D4806A',
+  symptomTeal: '#5A9E94',
+  symptomLavender: '#8E7BA8',
+  symptomCoral: '#D4806A',
 
-  // Light backgrounds at 12% for light mode
-  symptomFatigueLight: 'rgba(196, 184, 158, 0.12)',
-  symptomPemLight: 'rgba(168, 114, 94, 0.12)',
-  symptomBrainfogLight: 'rgba(111, 165, 153, 0.12)',
-  symptomPainLight: 'rgba(212, 136, 110, 0.12)',
-  symptomTealLight: 'rgba(111, 165, 153, 0.12)',
-  symptomLavenderLight: 'rgba(154, 141, 174, 0.12)',
-  symptomCoralLight: 'rgba(212, 136, 110, 0.12)',
+  // Light backgrounds - warmer tints
+  symptomFatigueLight: 'rgba(184, 168, 136, 0.18)',
+  symptomPemLight: 'rgba(181, 113, 90, 0.18)',
+  symptomBrainfogLight: 'rgba(90, 158, 148, 0.15)',
+  symptomPainLight: 'rgba(212, 128, 106, 0.18)',
+  symptomTealLight: 'rgba(90, 158, 148, 0.15)',
+  symptomLavenderLight: 'rgba(142, 123, 168, 0.15)',
+  symptomCoralLight: 'rgba(212, 128, 106, 0.18)',
 
-  // Severity
-  severityGood: '#5A9A91',
-  severityModerate: '#B8894A',
-  severityRough: '#D4634B',
-  severityNone: '#E8E2DC',
+  // Severity - more distinct, accessible colors
+  severityGood: '#4A8F6F',
+  severityModerate: '#C4873D',
+  severityRough: '#C9543D',
+  severityNone: '#EDE5DC',
 };
 
 /**

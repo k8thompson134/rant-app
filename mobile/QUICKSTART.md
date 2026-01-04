@@ -65,6 +65,42 @@ npm run web
 
 Opens at `http://localhost:8081`
 
+### Option D: Wireless ADB (Android Physical Device)
+
+Run directly on your phone without a USB cable:
+
+**One-time setup (requires USB first):**
+```bash
+# Connect phone via USB, then enable wireless debugging
+adb tcpip 5555
+
+# Disconnect USB, then connect wirelessly
+adb connect 192.168.1.113:5555
+```
+
+**Reconnecting (no USB needed):**
+```bash
+adb connect 192.168.1.113:5555
+```
+
+**Run the app:**
+```bash
+npx expo run:android
+```
+
+**Verify connection:**
+```bash
+adb devices
+# Should show: 192.168.1.113:5555  device
+```
+
+**Disconnect when done:**
+```bash
+adb disconnect 192.168.1.113:5555
+```
+
+> **Tip:** Your phone's IP may change if you reconnect to WiFi. Check it in Settings > WiFi > your network > IP address.
+
 ## Try It Out!
 
 Once the app loads:

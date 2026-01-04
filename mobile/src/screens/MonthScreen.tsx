@@ -15,7 +15,19 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { getAllRantEntries } from '../database/operations';
-import { RantEntry, SYMPTOM_DISPLAY_NAMES, SEVERITY_COLORS } from '../types';
+import {
+  RantEntry,
+  EditableSymptom,
+  SYMPTOM_DISPLAY_NAMES,
+  getSeverityColor,
+  getSeverityBackgroundColor,
+  formatActivityTrigger,
+  formatSymptomDuration,
+  formatTimeOfDay,
+} from '../types';
+import { updateRantEntry } from '../database/operations';
+import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
+import { AddSymptomModal } from '../components/AddSymptomModal';
 import type { MonthStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<MonthStackParamList, 'MonthView'>;
@@ -35,6 +47,11 @@ export function MonthScreen({ navigation }: Props) {
   const [entries, setEntries] = useState<RantEntry[]>([]);
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate());
   const [selectedDayEntries, setSelectedDayEntries] = useState<RantEntry[]>([]);
+
+  // Editing state
+  const [editingEntry, setEditingEntry] = useState<RantEntry | null>(null);
+  const [editingSymptomId, setEditingSymptomId] = useState<string | null>(null);
+  const [showAddSymptomModal, setShowAddSymptomModal] = useState(false);
 
   useEffect(() => {
     loadEntries();
@@ -85,6 +102,56 @@ export function MonthScreen({ navigation }: Props) {
     // Pass timestamp instead of Date object for serialization
     navigation.navigate('QuickAddEntry', { dateTimestamp: selectedDate.getTime() });
   };
+
+  // Handle symptom editing
+  const handleSymptomPress = (entry: RantEntry, symptomId: string) => {
+    setEditingEntry(entry);
+    setEditingSymptomId(symptomId);
+  };
+
+  const handleSymptomUpdate = async (updates: Partial<EditableSymptom>) => {
+    if (!editingEntry || !editingSymptomId) return;
+
+    try {
+      // Update the symptom in the entry
+      const updatedSymptoms = editingEntry.symptoms.map(s =>
+        s.id === editingSymptomId ? { ...s, ...updates } : s
+      );
+
+      // Save to database
+      await updateRantEntry(editingEntry.id, editingEntry.text, updatedSymptoms);
+
+      // Reload entries
+      await loadEntries();
+    } catch (error) {
+      console.error('Failed to update symptom:', error);
+    }
+  };
+
+  const handleAddSymptom = async (symptom: EditableSymptom) => {
+    if (!editingEntry) return;
+
+    try {
+      // Add the new symptom to the entry
+      const updatedSymptoms = [...editingEntry.symptoms, symptom];
+
+      // Save to database
+      await updateRantEntry(editingEntry.id, editingEntry.text, updatedSymptoms);
+
+      // Reload entries
+      await loadEntries();
+      setShowAddSymptomModal(false);
+    } catch (error) {
+      console.error('Failed to add symptom:', error);
+    }
+  };
+
+  const handleAddSymptomToEntry = (entry: RantEntry) => {
+    setEditingEntry(entry);
+    setShowAddSymptomModal(true);
+  };
+
+  const editingSymptom = editingEntry?.symptoms.find(s => s.id === editingSymptomId) as EditableSymptom | undefined;
 
   const getMonthName = () => {
     return currentDate.toLocaleDateString('en-US', { month: 'long' });
@@ -181,8 +248,8 @@ export function MonthScreen({ navigation }: Props) {
     return 'mild';
   };
 
-  const getSeverityColor = (severity: 'mild' | 'moderate' | 'severe') => {
-    return SEVERITY_COLORS[severity] || colors.textMuted;
+  const getEntrySeverityColor = (severity: 'mild' | 'moderate' | 'severe') => {
+    return getSeverityColor(severity, colors);
   };
 
   const getSeverityDotColor = (severity?: 'good' | 'moderate' | 'rough' | 'none') => {
@@ -200,7 +267,7 @@ export function MonthScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Navigation Header */}
         <View style={styles.navHeader}>
           <TouchableOpacity
@@ -281,42 +348,113 @@ export function MonthScreen({ navigation }: Props) {
               <Text style={styles.emptyAddText}>How were you feeling?</Text>
             </TouchableOpacity>
           ) : (
-            selectedDayEntries.map((entry) => (
-              <View
-                key={entry.id}
-                style={[
-                  styles.entryCard,
-                  { borderLeftColor: getSeverityColor(getEntrySeverity(entry)) }
-                ]}
-              >
-                <View style={styles.entryHeader}>
-                  <Text style={styles.entryTime}>{formatTime(entry.timestamp)}</Text>
-                  <Text style={[
-                    styles.entrySeverity,
-                    { color: getSeverityColor(getEntrySeverity(entry)) }
-                  ]}>
-                    {getEntrySeverity(entry)}
-                  </Text>
-                </View>
-                <Text style={styles.entryText} numberOfLines={2}>
-                  "{entry.text}"
-                </Text>
-                {entry.symptoms.length > 0 && (
-                  <View style={styles.symptomChips}>
-                    {entry.symptoms.slice(0, 3).map((symptom, index) => (
-                      <View key={`${entry.id}-${index}`} style={styles.symptomChip}>
-                        <Text style={styles.symptomChipText}>
-                          {SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom}
-                        </Text>
-                      </View>
-                    ))}
+            selectedDayEntries.map((entry) => {
+              const entrySeverity = getEntrySeverity(entry);
+              const severityColor = getEntrySeverityColor(entrySeverity);
+
+              return (
+                <View
+                  key={entry.id}
+                  style={[
+                    styles.entryCard,
+                    { borderLeftColor: severityColor }
+                  ]}
+                >
+                  <View style={styles.entryHeader}>
+                    <Text style={styles.entryTime}>{formatTime(entry.timestamp)}</Text>
+                    <Text style={[styles.entrySeverity, { color: severityColor }]}>
+                      {entrySeverity}
+                    </Text>
                   </View>
-                )}
-              </View>
-            ))
+                  <Text style={styles.entryText} numberOfLines={2}>
+                    "{entry.text}"
+                  </Text>
+                  {entry.symptoms.length > 0 ? (
+                    <View style={styles.symptomsList}>
+                      {entry.symptoms.map((symptom, index) => {
+                        const symptomSeverityColor = getSeverityColor(symptom.severity, colors);
+                        const symptomBgColor = getSeverityBackgroundColor(symptom.severity, colors);
+                        const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+
+                        // Build context parts
+                        const contextParts: string[] = [];
+                        if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
+                        if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
+                        if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
+                        const contextText = contextParts.join(' · ');
+
+                        // Pain location
+                        const painLocation = symptom.painDetails?.location;
+
+                        return (
+                          <TouchableOpacity
+                            key={`${entry.id}-${index}`}
+                            style={[
+                              styles.symptomItem,
+                              { backgroundColor: symptomBgColor }
+                            ]}
+                            onPress={() => handleSymptomPress(entry, symptom.id!)}
+                            accessible={true}
+                            accessibilityLabel={`Edit ${displayName}${painLocation ? ` in ${painLocation}` : ''}`}
+                            accessibilityRole="button"
+                            accessibilityHint="Tap to edit symptom details"
+                          >
+                            <View style={styles.symptomMainRow}>
+                              <Text style={[styles.symptomName, { color: symptomSeverityColor }]}>
+                                {displayName}
+                                {painLocation && (
+                                  <Text style={styles.symptomLocation}> ({painLocation})</Text>
+                                )}
+                              </Text>
+                              {symptom.severity && (
+                                <Text style={[styles.symptomSeverityBadge, { color: symptomSeverityColor }]}>
+                                  {symptom.severity}
+                                </Text>
+                              )}
+                            </View>
+                            {contextText.length > 0 && (
+                              <Text style={styles.symptomContext}>{contextText}</Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+
+                  {/* Add Symptom Button */}
+                  <TouchableOpacity
+                    style={[styles.addSymptomButton, { minHeight: touchTargetSize }]}
+                    onPress={() => handleAddSymptomToEntry(entry)}
+                    accessible={true}
+                    accessibilityLabel="Add symptom to this entry"
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name="add-circle-outline" size={18} color={colors.accentPrimary} />
+                    <Text style={styles.addSymptomText}>Add Symptom</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
           )}
         </View>
       </ScrollView>
+
+      {/* Modals */}
+      {editingSymptom && (
+        <SymptomDetailEditor
+          visible={editingSymptomId !== null}
+          symptom={editingSymptom}
+          onUpdate={handleSymptomUpdate}
+          onDismiss={() => setEditingSymptomId(null)}
+        />
+      )}
+
+      <AddSymptomModal
+        visible={showAddSymptomModal}
+        existingSymptoms={editingEntry?.symptoms.map(s => s.symptom) || []}
+        onAdd={handleAddSymptom}
+        onDismiss={() => setShowAddSymptomModal(false)}
+      />
     </View>
   );
 }
@@ -325,17 +463,22 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,
+    paddingTop: 50,
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   navHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
-    marginBottom: 24,
+    gap: 20,
+    marginBottom: 20,
   },
   navArrow: {
     padding: 8,
@@ -345,17 +488,22 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     color: colors.textPrimary,
   },
   calendarContainer: {
-    marginBottom: 20,
+    backgroundColor: colors.bgSecondary,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 24,
   },
   weekdayRow: {
     flexDirection: 'row',
     marginBottom: 12,
+    paddingHorizontal: 4,
   },
   weekdayLabel: {
     flex: 1,
     textAlign: 'center',
     ...typography.caption,
     color: colors.textMuted,
+    fontFamily: 'DMSans_500Medium',
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -395,19 +543,20 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     marginTop: 3,
   },
   entriesSection: {
-    marginTop: 8,
+    marginTop: 0,
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
     ...typography.sectionHeader,
     color: colors.textPrimary,
     textTransform: 'none',
     marginBottom: 0,
+    fontFamily: 'DMSans_500Medium',
   },
   addEntryButton: {
     flexDirection: 'row',
@@ -440,44 +589,81 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     backgroundColor: colors.bgSecondary,
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 14,
     borderLeftWidth: 4,
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   entryTime: {
     ...typography.small,
     color: colors.textSecondary,
+    fontFamily: 'DMSans_500Medium',
   },
   entrySeverity: {
     ...typography.small,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: 'DMSans_700Bold',
     textTransform: 'capitalize',
   },
   entryText: {
-    ...typography.small,
+    ...typography.body,
     color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 22,
+    marginBottom: 14,
+    fontStyle: 'italic',
   },
-  symptomChips: {
+  symptomsList: {
+    gap: 8,
+    marginTop: 4,
+  },
+  symptomItem: {
+    borderRadius: 10,
+    padding: 10,
+  },
+  symptomMainRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  symptomChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: colors.bgElevated,
+  symptomName: {
+    ...typography.small,
+    fontFamily: 'DMSans_500Medium',
+    flex: 1,
   },
-  symptomChipText: {
+  symptomLocation: {
+    ...typography.small,
+    fontStyle: 'italic',
+  },
+  symptomSeverityBadge: {
     ...typography.caption,
-    color: colors.textPrimary,
+    fontFamily: 'DMSans_500Medium',
+    textTransform: 'capitalize',
+    marginLeft: 8,
+  },
+  symptomContext: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  addSymptomButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.accentPrimary + '40',
+    borderStyle: 'dashed',
+  },
+  addSymptomText: {
+    ...typography.small,
+    color: colors.accentPrimary,
     fontFamily: 'DMSans_500Medium',
   },
 });

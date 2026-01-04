@@ -6,8 +6,18 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { EditableSymptom, SYMPTOM_DISPLAY_NAMES, getSymptomColor, getSymptomBackgroundColor } from '../types';
-import { useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
+import {
+  EditableSymptom,
+  SYMPTOM_DISPLAY_NAMES,
+  getSymptomColor,
+  getSymptomBackgroundColor,
+  getSeverityColor,
+  getSeverityBackgroundColor,
+  formatActivityTrigger,
+  formatSymptomDuration,
+  formatTimeOfDay,
+} from '../types';
+import { useTypography, useTouchTargetSize, useTheme } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
 import { typography as baseTypography } from '../theme/typography';
 
@@ -49,12 +59,56 @@ export function SymptomChip({
 }: SymptomChipProps) {
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
+  const colors = useTheme();
   const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
   const severityText = symptom.severity ? ` · ${symptom.severity}` : '';
   const painDetailsText = formatPainDetails(symptom.painDetails);
 
-  const chipColor = getSymptomColor(symptom.symptom);
-  const chipBackgroundColor = getSymptomBackgroundColor(symptom.symptom);
+  // Build secondary info parts (trigger, duration, timeOfDay)
+  const secondaryParts: string[] = [];
+  if (symptom.trigger) {
+    secondaryParts.push(formatActivityTrigger(symptom.trigger));
+  }
+  if (symptom.duration) {
+    secondaryParts.push(formatSymptomDuration(symptom.duration));
+  }
+  if (symptom.timeOfDay) {
+    secondaryParts.push(formatTimeOfDay(symptom.timeOfDay));
+  }
+
+  const secondaryText = secondaryParts.join(' · ');
+  const hasSecondaryInfo = !compact && secondaryText.length > 0;
+
+  // Build accessibility label with all info
+  const accessibilityParts = [displayName];
+  if (symptom.severity) accessibilityParts.push(symptom.severity);
+  if (symptom.painDetails) {
+    if (symptom.painDetails.qualifiers.length > 0) {
+      accessibilityParts.push(symptom.painDetails.qualifiers.join(', '));
+    }
+    if (symptom.painDetails.location) {
+      accessibilityParts.push(`in ${symptom.painDetails.location.replace('_', ' ')}`);
+    }
+  }
+  if (symptom.trigger) {
+    accessibilityParts.push(formatActivityTrigger(symptom.trigger));
+  }
+  if (symptom.duration) {
+    accessibilityParts.push(formatSymptomDuration(symptom.duration));
+  }
+  if (symptom.timeOfDay) {
+    accessibilityParts.push(formatTimeOfDay(symptom.timeOfDay));
+  }
+  const accessibilityLabel = accessibilityParts.join(', ');
+
+  // Use severity-based colors when severity is present, otherwise fall back to symptom category colors
+  const hasSeverity = !!symptom.severity;
+  const chipColor = hasSeverity
+    ? getSeverityColor(symptom.severity, colors)
+    : getSymptomColor(symptom.symptom);
+  const chipBackgroundColor = hasSeverity
+    ? getSeverityBackgroundColor(symptom.severity, colors)
+    : getSymptomBackgroundColor(symptom.symptom);
 
   return (
     <View
@@ -63,10 +117,21 @@ export function SymptomChip({
         { backgroundColor: chipBackgroundColor },
         compact && styles.chipCompact,
       ]}
+      accessible={true}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="text"
     >
-      <Text style={[styles.chipText, { color: chipColor }]}>
-        {displayName}{severityText}{painDetailsText}
-      </Text>
+      <View style={styles.textContainer}>
+        <Text style={[styles.chipText, { color: chipColor }]}>
+          {displayName}{severityText}{painDetailsText}
+        </Text>
+
+        {hasSecondaryInfo && (
+          <Text style={[styles.secondaryText, { color: colors.textMuted }]}>
+            {secondaryText}
+          </Text>
+        )}
+      </View>
 
       {editable && (
         <View style={styles.actions}>
@@ -116,6 +181,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -125,9 +191,17 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
   },
+  textContainer: {
+    flexShrink: 1,
+  },
   chipText: {
     ...baseTypography.small,
     fontFamily: 'DMSans_500Medium',
+  },
+  secondaryText: {
+    ...baseTypography.caption,
+    fontFamily: 'DMSans_400Regular',
+    marginTop: 2,
   },
   actions: {
     flexDirection: 'row',

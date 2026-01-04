@@ -95,6 +95,10 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
     }
   };
 
+  const handleCatchUpPress = () => {
+    navigation.navigate('CatchUp');
+  };
+
   const handleRantSubmit = async (text: string) => {
     try {
       setIsSaving(true);
@@ -199,6 +203,7 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
           <QuickActionChips
             onSameAsYesterday={handleSameAsYesterday}
             onQuickCheckIn={handleQuickCheckIn}
+            onCatchUp={handleCatchUpPress}
             hasYesterdayEntry={yesterdayEntry !== null}
           />
         )}
@@ -228,19 +233,21 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,
-    paddingTop: 17,
+    paddingTop: 50,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: 16,
     flexGrow: 1,
   },
   header: {
-    gap: 4,
-    marginBottom: 8,
+    gap: 2,
+    marginBottom: 12,
   },
   title: {
     ...typography.largeDisplay,
@@ -253,13 +260,13 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   rantCard: {
     backgroundColor: colors.bgSecondary,
     borderRadius: 24,
-    padding: 20,
+    padding: 24,
     flex: 1,
-    minHeight: 320,
+    minHeight: 360,
   },
   rantCardTitle: {
     ...typography.largeHeader,
     color: colors.accentPrimary,
-    marginBottom: 16,
+    marginBottom: 20,
   },
 });

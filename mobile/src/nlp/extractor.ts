@@ -11,7 +11,7 @@
  * - Chronic illness terminology
  */
 
-import { ExtractionResult, ExtractedSymptom } from '../types';
+import { ExtractionResult, ExtractedSymptom, SpoonCount, ActivityTrigger, SymptomDuration, TimeOfDay } from '../types';
 
 // ============================================================================
 // SYMPTOM LEMMAS - Single word mappings
@@ -2128,6 +2128,821 @@ export function extractPainDetails(text: string): Array<{
   return painDetails;
 }
 
+// ============================================================================
+// SPOON THEORY EXTRACTION
+// ============================================================================
+
+/**
+ * Common spoon theory phrases and patterns
+ * Spoon theory is used by chronic illness patients to describe energy levels
+ */
+const SPOON_PHRASES: Record<string, 'current' | 'used' | 'started' | 'zero'> = {
+  'out of spoons': 'zero',
+  'no spoons': 'zero',
+  'zero spoons': 'zero',
+  'negative spoons': 'zero',
+  'spoon deficit': 'zero',
+  'no spoons left': 'zero',
+  'completely out of spoons': 'zero',
+  'ran out of spoons': 'zero',
+  'spoons left': 'current',
+  'spoons remaining': 'current',
+  'have spoons': 'current',
+  'got spoons': 'current',
+  'spoons today': 'current',
+  'used spoons': 'used',
+  'spent spoons': 'used',
+  'cost spoons': 'used',
+  'took spoons': 'used',
+  'started with spoons': 'started',
+  'began with spoons': 'started',
+  'woke up with spoons': 'started',
+};
+
+/**
+ * Extract spoon count from text for energy level tracking
+ *
+ * Examples:
+ * - "I only have 2 spoons left" -> { current: 2, energyLevel: 2 }
+ * - "Started with 5 spoons, used 3" -> { started: 5, used: 3, current: 2, energyLevel: 2 }
+ * - "Completely out of spoons" -> { current: 0, energyLevel: 0 }
+ * - "Running on negative spoons" -> { current: 0, energyLevel: 0 }
+ */
+export function extractSpoonCount(text: string): SpoonCount | null {
+  const textLower = text.toLowerCase();
+
+  let current: number | undefined;
+  let used: number | undefined;
+  let started: number | undefined;
+
+  // Check for zero-spoon phrases first (no numbers needed)
+  for (const [phrase, type] of Object.entries(SPOON_PHRASES)) {
+    if (textLower.includes(phrase) && type === 'zero') {
+      return {
+        current: 0,
+        energyLevel: 0,
+      };
+    }
+  }
+
+  // Pattern: "X spoons" with context
+  // Matches: "2 spoons left", "have 3 spoons", "only 1 spoon"
+  const spoonPatterns = [
+    // "have/got/only X spoon(s)"
+    /(?:have|got|only|just)\s+(\d+)\s+spoons?/gi,
+    // "X spoon(s) left/remaining/today"
+    /(\d+)\s+spoons?\s+(?:left|remaining|today)/gi,
+    // "started/began/woke with X spoon(s)"
+    /(?:started|began|woke(?:\s+up)?)\s+(?:with\s+)?(\d+)\s+spoons?/gi,
+    // "used/spent/cost X spoon(s)"
+    /(?:used|spent|cost|took)\s+(\d+)\s+spoons?/gi,
+    // Simple "X spoons" at word boundary
+    /\b(\d+)\s+spoons?\b/gi,
+  ];
+
+  // Extract numbers with spoon context
+  for (const pattern of spoonPatterns) {
+    let match;
+    while ((match = pattern.exec(textLower)) !== null) {
+      const num = parseInt(match[1], 10);
+      const context = textLower.substring(Math.max(0, match.index - 20), match.index);
+      const afterContext = textLower.substring(match.index, Math.min(textLower.length, match.index + match[0].length + 20));
+
+      // Determine type based on context
+      if (context.includes('started') || context.includes('began') || context.includes('woke')) {
+        started = num;
+      } else if (context.includes('used') || context.includes('spent') || context.includes('cost') || context.includes('took')) {
+        used = num;
+      } else if (afterContext.includes('left') || afterContext.includes('remaining') ||
+                 context.includes('have') || context.includes('got') || context.includes('only')) {
+        current = num;
+      } else if (current === undefined) {
+        // Default to current if no other context
+        current = num;
+      }
+    }
+  }
+
+  // Calculate current from started - used if we have both
+  if (started !== undefined && used !== undefined && current === undefined) {
+    current = Math.max(0, started - used);
+  }
+
+  // If we found any spoon data, return it
+  if (current !== undefined || started !== undefined || used !== undefined) {
+    // Normalize to 0-10 energy level (assuming typical spoon count is 0-12)
+    // Most people describe having 5-10 spoons on a good day
+    const effectiveCurrent = current ?? (started !== undefined && used !== undefined ? started - used : 5);
+    const energyLevel = Math.min(10, Math.max(0, Math.round(effectiveCurrent * (10 / 12) * 10) / 10));
+
+    return {
+      current: current ?? effectiveCurrent,
+      used,
+      started,
+      energyLevel,
+    };
+  }
+
+  return null;
+}
+
+// ============================================================================
+// ACTIVITY TRIGGER DETECTION
+// ============================================================================
+
+/**
+ * Activities that commonly trigger symptoms in chronic illness
+ */
+const TRIGGER_ACTIVITIES: Record<string, string> = {
+  // Physical activities
+  'walking': 'walking',
+  'walked': 'walking',
+  'walk': 'walking',
+  'standing': 'standing',
+  'stood': 'standing',
+  'stand': 'standing',
+  'sitting': 'sitting',
+  'sat': 'sitting',
+  'showering': 'showering',
+  'shower': 'showering',
+  'showered': 'showering',
+  'bathing': 'bathing',
+  'bath': 'bathing',
+  'cooking': 'cooking',
+  'cooked': 'cooking',
+  'cleaning': 'cleaning',
+  'cleaned': 'cleaning',
+  'exercising': 'exercise',
+  'exercise': 'exercise',
+  'exercised': 'exercise',
+  'workout': 'exercise',
+  'working out': 'exercise',
+  'running': 'running',
+  'ran': 'running',
+  'jogging': 'jogging',
+  'climbing': 'climbing',
+  'stairs': 'climbing_stairs',
+  'lifting': 'lifting',
+  'carrying': 'carrying',
+  'bending': 'bending',
+  'reaching': 'reaching',
+  'stretching': 'stretching',
+
+  // Daily activities
+  'shopping': 'shopping',
+  'groceries': 'shopping',
+  'driving': 'driving',
+  'drove': 'driving',
+  'commuting': 'commuting',
+  'commute': 'commuting',
+  'working': 'working',
+  'work': 'working',
+  'worked': 'working',
+
+  // Social/Mental
+  'socializing': 'socializing',
+  'social': 'socializing',
+  'talking': 'talking',
+  'conversation': 'talking',
+  'meeting': 'meeting',
+  'appointment': 'appointment',
+  'doctor': 'medical_appointment',
+  'visiting': 'visiting',
+  'visit': 'visiting',
+
+  // Screen/Cognitive
+  'reading': 'reading',
+  'screen': 'screen_time',
+  'screens': 'screen_time',
+  'computer': 'screen_time',
+  'phone': 'screen_time',
+  'typing': 'typing',
+  'concentrating': 'concentrating',
+  'thinking': 'thinking',
+
+  // Food/Drink
+  'eating': 'eating',
+  'ate': 'eating',
+  'meal': 'eating',
+  'drinking': 'drinking',
+  'caffeine': 'caffeine',
+  'coffee': 'caffeine',
+  'alcohol': 'alcohol',
+
+  // Environmental
+  'heat': 'heat_exposure',
+  'sun': 'sun_exposure',
+  'cold': 'cold_exposure',
+  'noise': 'noise_exposure',
+  'lights': 'light_exposure',
+  'bright': 'light_exposure',
+};
+
+/**
+ * Trigger timeframe indicators
+ */
+const TRIGGER_TIMEFRAMES: Record<string, string> = {
+  'after': 'after',
+  'from': 'from',
+  'following': 'after',
+  'since': 'since',
+  'during': 'during',
+  'while': 'during',
+  'when': 'when',
+  'because of': 'from',
+  'due to': 'from',
+  'caused by': 'from',
+  'triggered by': 'from',
+  'thanks to': 'from',
+  'every time': 'every_time',
+  'whenever': 'every_time',
+};
+
+/**
+ * Symptoms commonly linked to activity triggers
+ */
+const TRIGGER_LINKED_SYMPTOMS = new Set([
+  'pem', 'crash', 'fatigue', 'exhaustion', 'flare',
+  'dizziness', 'orthostatic', 'presyncope', 'fainting',
+  'pain', 'muscle_pain', 'headache',
+  'brain_fog', 'nausea', 'palpitations',
+  'shortness_of_breath', 'weakness',
+]);
+
+/**
+ * Extract activity triggers and link them to symptoms
+ *
+ * Examples:
+ * - "After walking I crashed" -> PEM with trigger { activity: "walking", timeframe: "after" }
+ * - "Standing too long made me dizzy" -> dizziness with trigger { activity: "standing" }
+ * - "Crashed from the shower" -> PEM with trigger { activity: "showering", timeframe: "from" }
+ */
+export function extractActivityTriggers(text: string): Map<number, ActivityTrigger> {
+  const textLower = text.toLowerCase();
+  const tokens = tokenize(text);
+  const triggers = new Map<number, ActivityTrigger>();
+
+  // Find activity mentions with timeframe context
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+
+    // Check if this token is an activity
+    if (TRIGGER_ACTIVITIES[token]) {
+      const activity = TRIGGER_ACTIVITIES[token];
+      let timeframe: string | undefined;
+
+      // Look backwards for timeframe indicators (within 4 tokens)
+      for (let j = Math.max(0, i - 4); j < i; j++) {
+        const prevToken = tokens[j];
+        // Check single words
+        if (TRIGGER_TIMEFRAMES[prevToken]) {
+          timeframe = TRIGGER_TIMEFRAMES[prevToken];
+          break;
+        }
+        // Check two-word phrases
+        if (j < i - 1) {
+          const twoWord = `${prevToken} ${tokens[j + 1]}`;
+          if (TRIGGER_TIMEFRAMES[twoWord]) {
+            timeframe = TRIGGER_TIMEFRAMES[twoWord];
+            break;
+          }
+        }
+      }
+
+      // Look forward for symptom indicators (within 8 tokens)
+      // This helps us know if this activity is mentioned as a trigger
+      let hasSymptomNearby = false;
+      for (let j = i + 1; j < Math.min(tokens.length, i + 8); j++) {
+        const nextToken = tokens[j];
+        if (SYMPTOM_LEMMAS[nextToken] || TRIGGER_LINKED_SYMPTOMS.has(nextToken)) {
+          hasSymptomNearby = true;
+          break;
+        }
+      }
+
+      // Also check if symptom was mentioned before (for "crashed from walking" pattern)
+      if (!hasSymptomNearby) {
+        for (let j = Math.max(0, i - 6); j < i; j++) {
+          const prevToken = tokens[j];
+          if (SYMPTOM_LEMMAS[prevToken] || TRIGGER_LINKED_SYMPTOMS.has(prevToken)) {
+            hasSymptomNearby = true;
+            break;
+          }
+        }
+      }
+
+      // If there's a symptom nearby, store the trigger
+      if (hasSymptomNearby || timeframe) {
+        triggers.set(i, {
+          activity,
+          timeframe,
+        });
+      }
+    }
+  }
+
+  return triggers;
+}
+
+// ============================================================================
+// CONFIDENCE SCORING
+// ============================================================================
+
+/**
+ * Calculate confidence score for an extracted symptom
+ *
+ * Confidence is based on:
+ * - Extraction method (phrase > lemma)
+ * - Match specificity (longer matches = higher confidence)
+ * - Context clarity (severity indicators, body parts mentioned)
+ * - Negation proximity (closer negation = lower confidence)
+ */
+export function calculateConfidence(
+  symptom: ExtractedSymptom,
+  text: string,
+  matchIndex: number
+): number {
+  let confidence = 0.5; // Base confidence
+
+  // Method bonus: phrases are more specific than lemmas
+  if (symptom.method === 'phrase') {
+    confidence += 0.25;
+  } else if (symptom.method === 'lemma') {
+    confidence += 0.1;
+  }
+
+  // Match length bonus: longer matches are more specific
+  const matchLength = symptom.matched.split(' ').length;
+  if (matchLength >= 3) {
+    confidence += 0.15;
+  } else if (matchLength === 2) {
+    confidence += 0.1;
+  }
+
+  // Severity indicator bonus: explicit severity adds confidence
+  if (symptom.severity) {
+    confidence += 0.05;
+  }
+
+  // Pain details bonus: having qualifiers/location adds specificity
+  if (symptom.painDetails) {
+    if (symptom.painDetails.qualifiers.length > 0) {
+      confidence += 0.05;
+    }
+    if (symptom.painDetails.location) {
+      confidence += 0.05;
+    }
+  }
+
+  // Trigger bonus: having an activity trigger adds context
+  if (symptom.trigger) {
+    confidence += 0.05;
+  }
+
+  // Clamp to 0-1 range
+  return Math.min(1, Math.max(0, Math.round(confidence * 100) / 100));
+}
+
+/**
+ * Add confidence scores to all extracted symptoms
+ */
+function addConfidenceScores(
+  symptoms: ExtractedSymptom[],
+  text: string
+): ExtractedSymptom[] {
+  const textLower = text.toLowerCase();
+
+  return symptoms.map(symptom => {
+    // Find the match position in text
+    const matchIndex = textLower.indexOf(symptom.matched.toLowerCase());
+
+    return {
+      ...symptom,
+      confidence: calculateConfidence(symptom, text, matchIndex),
+    };
+  });
+}
+
+// ============================================================================
+// SYMPTOM DURATION EXTRACTION
+// ============================================================================
+
+/**
+ * Duration unit mappings
+ */
+const DURATION_UNITS: Record<string, SymptomDuration['unit']> = {
+  'minute': 'minutes',
+  'minutes': 'minutes',
+  'min': 'minutes',
+  'mins': 'minutes',
+  'hour': 'hours',
+  'hours': 'hours',
+  'hr': 'hours',
+  'hrs': 'hours',
+  'day': 'days',
+  'days': 'days',
+  'week': 'weeks',
+  'weeks': 'weeks',
+};
+
+/**
+ * Duration qualifier phrases
+ */
+const DURATION_QUALIFIERS: Record<string, SymptomDuration['qualifier']> = {
+  'all day': 'all',
+  'all night': 'all',
+  'all morning': 'all',
+  'all afternoon': 'all',
+  'all evening': 'all',
+  'the whole day': 'all',
+  'the whole night': 'all',
+  'entire day': 'all',
+  'entire night': 'all',
+  'half the day': 'half',
+  'half the night': 'half',
+  'half day': 'half',
+  'most of the day': 'most_of',
+  'most of the night': 'most_of',
+  'most of today': 'most_of',
+};
+
+/**
+ * Ongoing symptom indicators
+ */
+const ONGOING_INDICATORS = new Set([
+  'still',
+  'ongoing',
+  'continuous',
+  'constantly',
+  'nonstop',
+  'non-stop',
+  'persistent',
+  'persistently',
+  'unrelenting',
+  'relentless',
+]);
+
+/**
+ * Extract symptom duration from text
+ *
+ * Examples:
+ * - "Headache for 3 hours" -> { value: 3, unit: "hours" }
+ * - "Pain all day" -> { qualifier: "all", unit: "days" }
+ * - "Nausea since Tuesday" -> { since: "Tuesday" }
+ * - "Still have the headache" -> { ongoing: true }
+ */
+export function extractDuration(text: string): SymptomDuration | null {
+  const textLower = text.toLowerCase();
+
+  // Check for ongoing indicators
+  const tokens = tokenize(text);
+  const hasOngoing = tokens.some(t => ONGOING_INDICATORS.has(t));
+
+  // Check for qualifier phrases first ("all day", "half the night", etc.)
+  for (const [phrase, qualifier] of Object.entries(DURATION_QUALIFIERS)) {
+    if (textLower.includes(phrase)) {
+      // Determine unit from phrase
+      let unit: SymptomDuration['unit'] = 'days';
+      if (phrase.includes('night') || phrase.includes('evening')) {
+        unit = 'hours'; // Night/evening implies hours
+      } else if (phrase.includes('morning') || phrase.includes('afternoon')) {
+        unit = 'hours';
+      }
+
+      return {
+        qualifier,
+        unit,
+        ongoing: hasOngoing || undefined,
+      };
+    }
+  }
+
+  // Pattern: "for X hours/days/etc."
+  const forPattern = /for\s+(\d+)\s+(minutes?|mins?|hours?|hrs?|days?|weeks?)/gi;
+  let match = forPattern.exec(textLower);
+  if (match) {
+    return {
+      value: parseInt(match[1], 10),
+      unit: DURATION_UNITS[match[2].toLowerCase().replace(/s$/, '')] || 'hours',
+      ongoing: hasOngoing || undefined,
+    };
+  }
+
+  // Pattern: "X hours/days of pain"
+  const ofPattern = /(\d+)\s+(minutes?|mins?|hours?|hrs?|days?|weeks?)\s+of/gi;
+  match = ofPattern.exec(textLower);
+  if (match) {
+    return {
+      value: parseInt(match[1], 10),
+      unit: DURATION_UNITS[match[2].toLowerCase().replace(/s$/, '')] || 'hours',
+      ongoing: hasOngoing || undefined,
+    };
+  }
+
+  // Pattern: "since [day/time reference]"
+  const sincePattern = /since\s+(yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|this morning|last night|the morning|tonight)/gi;
+  match = sincePattern.exec(textLower);
+  if (match) {
+    return {
+      since: match[1],
+      ongoing: true,
+    };
+  }
+
+  // Pattern: "lasted X hours"
+  const lastedPattern = /lasted\s+(\d+)\s+(minutes?|mins?|hours?|hrs?|days?|weeks?)/gi;
+  match = lastedPattern.exec(textLower);
+  if (match) {
+    return {
+      value: parseInt(match[1], 10),
+      unit: DURATION_UNITS[match[2].toLowerCase().replace(/s$/, '')] || 'hours',
+    };
+  }
+
+  // Just ongoing indicator without duration
+  if (hasOngoing) {
+    return { ongoing: true };
+  }
+
+  return null;
+}
+
+// ============================================================================
+// TIME OF DAY EXTRACTION
+// ============================================================================
+
+/**
+ * Time of day patterns
+ */
+const TIME_OF_DAY_PATTERNS: Record<string, TimeOfDay> = {
+  // Morning
+  'morning': 'morning',
+  'this morning': 'morning',
+  'in the morning': 'morning',
+  'when i woke up': 'morning',
+  'woke up with': 'morning',
+  'waking up': 'morning',
+  'first thing': 'morning',
+  'am': 'morning',
+
+  // Afternoon
+  'afternoon': 'afternoon',
+  'this afternoon': 'afternoon',
+  'in the afternoon': 'afternoon',
+  'midday': 'afternoon',
+  'lunch': 'afternoon',
+  'after lunch': 'afternoon',
+
+  // Evening
+  'evening': 'evening',
+  'this evening': 'evening',
+  'in the evening': 'evening',
+  'dinner': 'evening',
+  'after dinner': 'evening',
+  'end of day': 'evening',
+
+  // Night
+  'night': 'night',
+  'tonight': 'night',
+  'at night': 'night',
+  'during the night': 'night',
+  'last night': 'night',
+  'overnight': 'night',
+  'nighttime': 'night',
+  'middle of the night': 'night',
+  'pm': 'night',
+  'before bed': 'night',
+  'bedtime': 'night',
+  'while sleeping': 'night',
+
+  // All day
+  'all day': 'all_day',
+  'the whole day': 'all_day',
+  'entire day': 'all_day',
+  'constantly': 'all_day',
+  'nonstop': 'all_day',
+  '24/7': 'all_day',
+};
+
+/**
+ * Extract time of day when symptom occurred
+ *
+ * Examples:
+ * - "Morning headache" -> "morning"
+ * - "Worse at night" -> "night"
+ * - "Woke up with pain" -> "morning"
+ * - "Pain all day" -> "all_day"
+ */
+export function extractTimeOfDay(text: string): TimeOfDay | null {
+  const textLower = text.toLowerCase();
+
+  // Check phrases from longest to shortest for accuracy
+  const sortedPatterns = Object.entries(TIME_OF_DAY_PATTERNS)
+    .sort((a, b) => b[0].length - a[0].length);
+
+  for (const [phrase, timeOfDay] of sortedPatterns) {
+    if (textLower.includes(phrase)) {
+      return timeOfDay;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Add duration and time-of-day to symptoms
+ */
+/**
+ * Find all temporal markers with their positions in text
+ */
+function findTemporalMarkers(text: string): Array<{
+  position: number;
+  timeOfDay?: TimeOfDay;
+  duration?: SymptomDuration;
+  phrase: string;
+}> {
+  const textLower = text.toLowerCase();
+  const markers: Array<{
+    position: number;
+    timeOfDay?: TimeOfDay;
+    duration?: SymptomDuration;
+    phrase: string;
+  }> = [];
+
+  // Find time of day markers
+  const sortedTimePatterns = Object.entries(TIME_OF_DAY_PATTERNS)
+    .sort((a, b) => b[0].length - a[0].length);
+
+  for (const [phrase, timeOfDay] of sortedTimePatterns) {
+    const pos = textLower.indexOf(phrase);
+    if (pos !== -1) {
+      markers.push({ position: pos, timeOfDay, phrase });
+    }
+  }
+
+  // Find duration markers - "all day", "since yesterday", etc.
+  for (const [phrase, qualifier] of Object.entries(DURATION_QUALIFIERS)) {
+    const pos = textLower.indexOf(phrase);
+    if (pos !== -1) {
+      let unit: SymptomDuration['unit'] = 'days';
+      if (phrase.includes('night') || phrase.includes('evening')) {
+        unit = 'hours';
+      }
+      markers.push({
+        position: pos,
+        duration: { qualifier, unit },
+        phrase,
+      });
+    }
+  }
+
+  // Find "since X" patterns
+  const sincePattern = /since\s+(yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|this morning|last night)/gi;
+  let match;
+  while ((match = sincePattern.exec(textLower)) !== null) {
+    markers.push({
+      position: match.index,
+      duration: { since: match[1], ongoing: true },
+      phrase: match[0],
+    });
+  }
+
+  // Find "for X hours" patterns
+  const forPattern = /for\s+(\d+)\s+(minutes?|mins?|hours?|hrs?|days?|weeks?)/gi;
+  while ((match = forPattern.exec(textLower)) !== null) {
+    markers.push({
+      position: match.index,
+      duration: {
+        value: parseInt(match[1], 10),
+        unit: DURATION_UNITS[match[2].toLowerCase().replace(/s$/, '')] || 'hours',
+      },
+      phrase: match[0],
+    });
+  }
+
+  return markers;
+}
+
+function addTemporalInfo(
+  symptoms: ExtractedSymptom[],
+  text: string
+): ExtractedSymptom[] {
+  const markers = findTemporalMarkers(text);
+
+  // If no temporal markers found, return as-is
+  if (markers.length === 0) {
+    return symptoms;
+  }
+
+  const textLower = text.toLowerCase();
+
+  // For each symptom, find if there's a temporal marker nearby
+  return symptoms.map(symptom => {
+    // Find where this symptom appears in the text
+    const symptomPos = textLower.indexOf(symptom.matched.toLowerCase());
+    if (symptomPos === -1) {
+      return symptom;
+    }
+
+    // Find the closest temporal marker within 50 characters
+    let closestTimeOfDay: TimeOfDay | undefined;
+    let closestDuration: SymptomDuration | undefined;
+    let closestTimeDistance = 50;
+    let closestDurationDistance = 50;
+
+    for (const marker of markers) {
+      const distance = Math.abs(marker.position - symptomPos);
+
+      // Link time of day if close enough
+      if (marker.timeOfDay && distance < closestTimeDistance) {
+        closestTimeDistance = distance;
+        closestTimeOfDay = marker.timeOfDay;
+      }
+
+      // Link duration if close enough
+      if (marker.duration && distance < closestDurationDistance) {
+        closestDurationDistance = distance;
+        closestDuration = marker.duration;
+      }
+    }
+
+    return {
+      ...symptom,
+      ...(closestTimeOfDay && { timeOfDay: closestTimeOfDay }),
+      ...(closestDuration && { duration: closestDuration }),
+    };
+  });
+}
+
+/**
+ * Link extracted symptoms to their potential triggers using character-based proximity.
+ * Only links the trigger to the CLOSEST symptom, not all symptoms within range.
+ */
+function linkTriggersToSymptoms(
+  symptoms: ExtractedSymptom[],
+  triggers: Map<number, ActivityTrigger>,
+  tokens: string[],
+  text: string
+): ExtractedSymptom[] {
+  if (triggers.size === 0) return symptoms;
+
+  const textLower = text.toLowerCase();
+
+  // Convert token positions to character positions
+  const triggerCharPositions: Array<{ pos: number; trigger: ActivityTrigger }> = [];
+  let charPos = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    if (triggers.has(i)) {
+      // Find actual position in text
+      const tokenPos = textLower.indexOf(tokens[i], charPos);
+      if (tokenPos !== -1) {
+        triggerCharPositions.push({ pos: tokenPos, trigger: triggers.get(i)! });
+        charPos = tokenPos + tokens[i].length;
+      }
+    }
+  }
+
+  if (triggerCharPositions.length === 0) return symptoms;
+
+  // For each trigger, find the CLOSEST symptom and link only that one
+  const symptomTriggerMap = new Map<string, ActivityTrigger>();
+
+  for (const { pos: triggerPos, trigger } of triggerCharPositions) {
+    let closestSymptomId: string | undefined;
+    let closestDistance = 40; // Max 40 characters proximity
+
+    for (const symptom of symptoms) {
+      // Only consider symptoms that can have triggers
+      if (!TRIGGER_LINKED_SYMPTOMS.has(symptom.symptom)) continue;
+
+      // Find symptom position in text
+      const symptomPos = textLower.indexOf(symptom.matched.toLowerCase());
+      if (symptomPos === -1) continue;
+
+      const distance = Math.abs(symptomPos - triggerPos);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestSymptomId = symptom.id || `${symptom.symptom}_${symptom.matched}`;
+      }
+    }
+
+    // Link trigger only to closest symptom
+    if (closestSymptomId) {
+      symptomTriggerMap.set(closestSymptomId, trigger);
+    }
+  }
+
+  // Apply triggers to symptoms
+  return symptoms.map(symptom => {
+    const symptomKey = symptom.id || `${symptom.symptom}_${symptom.matched}`;
+    const trigger = symptomTriggerMap.get(symptomKey);
+    if (trigger) {
+      return { ...symptom, trigger };
+    }
+    return symptom;
+  });
+}
+
 export function extractSymptoms(text: string): ExtractionResult {
   const textLower = text.toLowerCase();
   const foundSymptoms: ExtractedSymptom[] = [];
@@ -2253,8 +3068,22 @@ export function extractSymptoms(text: string): ExtractionResult {
     }
   }
 
+  // Step 4: Extract activity triggers and link to symptoms
+  const activityTriggers = extractActivityTriggers(text);
+  const symptomsWithTriggers = linkTriggersToSymptoms(foundSymptoms, activityTriggers, tokens, text);
+
+  // Step 5: Add confidence scores to all symptoms
+  const symptomsWithConfidence = addConfidenceScores(symptomsWithTriggers, text);
+
+  // Step 6: Add temporal info (duration and time of day)
+  const symptomsWithTemporal = addTemporalInfo(symptomsWithConfidence, text);
+
+  // Step 7: Extract spoon count for energy tracking
+  const spoonCount = extractSpoonCount(text);
+
   return {
     text,
-    symptoms: foundSymptoms,
+    symptoms: symptomsWithTemporal,
+    spoonCount: spoonCount ?? undefined,
   };
 }

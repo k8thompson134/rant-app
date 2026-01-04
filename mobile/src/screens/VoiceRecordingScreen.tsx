@@ -168,6 +168,9 @@ export function VoiceRecordingScreen({ route, navigation }: Props) {
       setIsRecording(true);
       setIsProcessing(false);
 
+      // Add small delay to allow native module initialization
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       // Start speech recognition with extended settings for low-energy users
       ExpoSpeechRecognitionModule.start({
         lang: 'en-US',

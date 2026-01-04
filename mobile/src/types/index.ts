@@ -14,6 +14,28 @@ export interface PainDetails {
   location: string | null;  // e.g., "shoulder", "calf"
 }
 
+export interface ActivityTrigger {
+  activity: string;  // e.g., "walking", "standing", "showering"
+  timeframe?: string;  // e.g., "after", "during", "from"
+}
+
+export interface SpoonCount {
+  current: number;  // Current spoons mentioned (e.g., "I have 2 spoons")
+  used?: number;  // Spoons used (e.g., "used 3 spoons")
+  started?: number;  // Starting spoons (e.g., "started with 5")
+  energyLevel: number;  // Normalized 0-10 scale
+}
+
+export interface SymptomDuration {
+  value?: number;  // Numeric duration (e.g., 3 for "3 hours")
+  unit?: 'minutes' | 'hours' | 'days' | 'weeks';  // Time unit
+  qualifier?: 'all' | 'half' | 'most_of';  // "all day", "half the night"
+  since?: string;  // Reference point (e.g., "Tuesday", "yesterday")
+  ongoing?: boolean;  // "still have", "won't go away"
+}
+
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night' | 'all_day';
+
 export interface ExtractedSymptom {
   symptom: string;
   matched: string;
@@ -22,6 +44,10 @@ export interface ExtractedSymptom {
   severity?: Severity | null;
   id?: string;
   painDetails?: PainDetails;  // For pain symptoms with qualifiers/location
+  trigger?: ActivityTrigger;  // Activity that triggered this symptom
+  confidence?: number;  // 0-1 confidence score for extraction accuracy
+  duration?: SymptomDuration;  // How long the symptom lasted
+  timeOfDay?: TimeOfDay;  // When the symptom occurred
 }
 
 export interface EditableSymptom extends ExtractedSymptom {
@@ -31,6 +57,7 @@ export interface EditableSymptom extends ExtractedSymptom {
 export interface ExtractionResult {
   text: string;
   symptoms: ExtractedSymptom[];
+  spoonCount?: SpoonCount;  // Spoon theory energy tracking
 }
 
 export interface RantEntry {
@@ -887,4 +914,131 @@ export function getSymptomColor(symptom: string): string {
  */
 export function getSymptomBackgroundColor(symptom: string): string {
   return SYMPTOM_BACKGROUND_COLORS[symptom] || SYMPTOM_BACKGROUND_COLORS.default;
+}
+
+/**
+ * Get severity color for text/icons
+ * @param severity - The severity level (mild, moderate, severe)
+ * @param themeColors - Optional theme colors object for dynamic theming
+ */
+export function getSeverityColor(severity: Severity | null | undefined, themeColors?: typeof darkTheme): string {
+  const theme = themeColors || colors;
+  if (!severity) return theme.textSecondary;
+
+  switch (severity) {
+    case 'mild':
+      return theme.severityGood;
+    case 'moderate':
+      return theme.severityModerate;
+    case 'severe':
+      return theme.severityRough;
+    default:
+      return theme.textSecondary;
+  }
+}
+
+/**
+ * Get severity background color (with transparency)
+ * @param severity - The severity level (mild, moderate, severe)
+ * @param themeColors - Optional theme colors object for dynamic theming
+ */
+export function getSeverityBackgroundColor(severity: Severity | null | undefined, themeColors?: typeof darkTheme): string {
+  const theme = themeColors || colors;
+  if (!severity) return theme.severityNone;
+
+  switch (severity) {
+    case 'mild':
+      return theme.severityGood + '20'; // 12% opacity
+    case 'moderate':
+      return theme.severityModerate + '25'; // 15% opacity
+    case 'severe':
+      return theme.severityRough + '30'; // 19% opacity
+    default:
+      return theme.severityNone;
+  }
+}
+
+/**
+ * Format activity trigger for display
+ * @returns Readable string like "after walking" or "during standing", empty if no trigger
+ */
+export function formatActivityTrigger(trigger?: ActivityTrigger): string {
+  if (!trigger?.activity) return '';
+
+  const timeframe = trigger.timeframe || 'after';
+  return `${timeframe} ${trigger.activity}`;
+}
+
+/**
+ * Format symptom duration for display
+ * @returns Readable string like "for 3 hours", "all day", "since Tuesday", empty if no duration
+ */
+export function formatSymptomDuration(duration?: SymptomDuration): string {
+  if (!duration) return '';
+
+  // Handle ongoing (highest priority)
+  if (duration.ongoing) return 'ongoing';
+
+  // Handle "since" reference points
+  if (duration.since) return `since ${duration.since}`;
+
+  // Handle qualifiers like "all day", "half the night"
+  if (duration.qualifier && duration.unit) {
+    const timeLabel = duration.unit === 'days' ? 'day' : duration.unit.slice(0, -1); // "days" -> "day"
+
+    if (duration.qualifier === 'all') {
+      return `all ${timeLabel}`;
+    } else if (duration.qualifier === 'half') {
+      return `half the ${timeLabel}`;
+    } else if (duration.qualifier === 'most_of') {
+      return `most of the ${timeLabel}`;
+    }
+  }
+
+  // Handle specific value + unit
+  if (duration.value !== undefined && duration.unit) {
+    const unit = duration.value === 1 ? duration.unit.slice(0, -1) : duration.unit; // "hours" -> "hour" if value is 1
+    return `for ${duration.value} ${unit}`;
+  }
+
+  return '';
+}
+
+/**
+ * Format time of day for display
+ * @returns Readable string like "morning", "all day", empty if no timeOfDay
+ */
+export function formatTimeOfDay(timeOfDay?: TimeOfDay): string {
+  if (!timeOfDay) return '';
+
+  // Convert snake_case to readable text
+  return timeOfDay.replace('_', ' ');
+}
+
+/**
+ * Format spoon count for display
+ * @returns Readable string like "2 spoons (4/10 energy)" or "out of spoons (0/10)", empty if no spoons
+ */
+export function formatSpoonCount(spoons?: SpoonCount): string {
+  if (!spoons) return '';
+
+  // Handle "out of spoons" case (0 current)
+  if (spoons.current === 0) {
+    return `out of spoons (${spoons.energyLevel}/10 energy)`;
+  }
+
+  // Handle single spoon vs multiple spoons
+  const spoonLabel = spoons.current === 1 ? 'spoon' : 'spoons';
+
+  // Include started/used context if available
+  if (spoons.started !== undefined && spoons.used !== undefined) {
+    return `${spoons.current} ${spoonLabel} (started with ${spoons.started}, used ${spoons.used})`;
+  } else if (spoons.started !== undefined) {
+    return `${spoons.current} ${spoonLabel} (started with ${spoons.started})`;
+  } else if (spoons.used !== undefined) {
+    return `${spoons.current} ${spoonLabel} (used ${spoons.used})`;
+  }
+
+  // Basic format with energy level
+  return `${spoons.current} ${spoonLabel} (${spoons.energyLevel}/10 energy)`;
 }

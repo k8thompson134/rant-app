@@ -13,12 +13,14 @@ import { typography as baseTypography } from '../theme/typography';
 interface QuickActionChipsProps {
   onSameAsYesterday: () => void;
   onQuickCheckIn: () => void;
+  onCatchUp: () => void;
   hasYesterdayEntry: boolean;
 }
 
 export function QuickActionChips({
   onSameAsYesterday,
   onQuickCheckIn,
+  onCatchUp,
   hasYesterdayEntry,
 }: QuickActionChipsProps) {
   const colors = useTheme();
@@ -26,71 +28,106 @@ export function QuickActionChips({
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const touchTargetSize = useTouchTargetSize();
 
+  // ACCESSIBILITY: Scale icon size with font size for consistency
+  const iconSize = Math.max(14, typography.caption.fontSize * 1.2);
+
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
+    <View style={styles.container}>
       <TouchableOpacity
         style={[
           styles.chip,
-          { minHeight: touchTargetSize },
+          {
+            minHeight: touchTargetSize,
+            minWidth: touchTargetSize  // ACCESSIBILITY: Ensure width meets WCAG AAA (48-64pt minimum)
+          },
           !hasYesterdayEntry && styles.chipDisabled
         ]}
         onPress={onSameAsYesterday}
         disabled={!hasYesterdayEntry}
         accessible={true}
         accessibilityLabel="Same as yesterday"
+        accessibilityHint={
+          hasYesterdayEntry
+            ? "Copies your most recent entry for editing"
+            : "No previous entry available to copy"
+        }
         accessibilityRole="button"
+        accessibilityState={{ disabled: !hasYesterdayEntry }}  // ACCESSIBILITY: Announce disabled state to screen readers
       >
         <Ionicons
-          name="calendar-outline"
-          size={14}
+          name="copy-outline"
+          size={iconSize}
           color={hasYesterdayEntry ? colors.textPrimary : colors.textSecondary}
         />
         <Text style={[styles.chipText, !hasYesterdayEntry && styles.chipTextDisabled]}>
-          Same as yesterday
+          Yesterday
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={[
           styles.chip,
-          { minHeight: touchTargetSize }
+          {
+            minHeight: touchTargetSize,
+            minWidth: touchTargetSize  // ACCESSIBILITY: Ensure width meets WCAG AAA (48-64pt minimum)
+          }
         ]}
         onPress={onQuickCheckIn}
         accessible={true}
         accessibilityLabel="Quick check-in"
+        accessibilityHint="Opens a simplified symptom entry form"  // ACCESSIBILITY: Explain action to screen reader users
         accessibilityRole="button"
       >
         <Ionicons
           name="flash-outline"
-          size={14}
+          size={iconSize}
           color={colors.textPrimary}
         />
         <Text style={styles.chipText}>
-          Quick check-in
+          Quick
         </Text>
       </TouchableOpacity>
-    </ScrollView>
+
+      <TouchableOpacity
+        style={[
+          styles.chip,
+          {
+            minHeight: touchTargetSize,
+            minWidth: touchTargetSize  // ACCESSIBILITY: Ensure width meets WCAG AAA (48-64pt minimum)
+          }
+        ]}
+        onPress={onCatchUp}
+        accessible={true}
+        accessibilityLabel="Catch up on missed days"
+        accessibilityHint="Log symptoms for multiple past days at once"  // ACCESSIBILITY: Explain action to screen reader users
+        accessibilityRole="button"
+      >
+        <Ionicons
+          name="calendar-number-outline"
+          size={iconSize}
+          color={colors.textPrimary}
+        />
+        <Text style={styles.chipText}>
+          Catch Up
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) => StyleSheet.create({
   container: {
-    flexGrow: 0,
-  },
-  contentContainer: {
-    paddingHorizontal: 4,
-    gap: TOUCH_TARGET_SPACING / 2,
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 0,
   },
   chip: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
     borderRadius: 16,
     backgroundColor: colors.bgElevated,
     borderWidth: 1,
@@ -103,21 +140,9 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   chipText: {
     ...baseTypography.caption,
     color: colors.textPrimary,
+    fontSize: 13,
   },
   chipTextDisabled: {
     color: colors.textSecondary,
-  },
-  badge: {
-    backgroundColor: colors.accentPrimary,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 6,
-    marginLeft: 4,
-  },
-  badgeText: {
-    ...baseTypography.caption,
-    fontSize: 9,
-    color: colors.bgPrimary,
-    fontFamily: 'DMSans_500Medium',
   },
 });

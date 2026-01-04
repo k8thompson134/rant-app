@@ -12,8 +12,17 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getAllRantEntries, deleteRantEntry } from '../database/operations';
-import { RantEntry, SYMPTOM_DISPLAY_NAMES, SEVERITY_COLORS } from '../types';
+import {
+  RantEntry,
+  SYMPTOM_DISPLAY_NAMES,
+  getSeverityColor,
+  getSeverityBackgroundColor,
+  formatActivityTrigger,
+  formatSymptomDuration,
+  formatTimeOfDay,
+} from '../types';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 
 export function HistoryScreen() {
@@ -90,48 +99,92 @@ export function HistoryScreen() {
     });
   };
 
-  const renderEntry = ({ item }: { item: RantEntry }) => (
-    <View style={styles.entryCard}>
-      <View style={styles.entryHeader}>
-        <Text style={styles.entryDate}>{formatDate(item.timestamp)}</Text>
-        <TouchableOpacity
-          onPress={() => handleDelete(item.id)}
-          style={[styles.deleteButton, { minHeight: touchTargetSize }]}
-        >
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
+  // Calculate overall entry severity
+  const getEntrySeverity = (entry: RantEntry): 'mild' | 'moderate' | 'severe' => {
+    const severities = entry.symptoms
+      .map(s => s.severity)
+      .filter((s): s is 'mild' | 'moderate' | 'severe' => s !== null && s !== undefined);
 
-      <Text style={styles.entryText} numberOfLines={3}>
-        {item.text}
-      </Text>
+    if (severities.length === 0) return 'moderate';
+    if (severities.includes('severe')) return 'severe';
+    if (severities.includes('moderate')) return 'moderate';
+    return 'mild';
+  };
 
-      {item.symptoms.length > 0 && (
-        <View style={styles.symptomTags}>
-          {item.symptoms.slice(0, 4).map((symptom, index) => (
-            <View key={`${item.id}-${index}`} style={styles.symptomTag}>
-              {symptom.severity && (
-                <View
-                  style={[
-                    styles.severityDot,
-                    { backgroundColor: SEVERITY_COLORS[symptom.severity] },
-                  ]}
-                />
-              )}
-              <Text style={styles.symptomTagText}>
-                {SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom}
-              </Text>
-            </View>
-          ))}
-          {item.symptoms.length > 4 && (
-            <Text style={styles.moreSymptoms}>
-              +{item.symptoms.length - 4} more
+  const renderEntry = ({ item }: { item: RantEntry }) => {
+    const entrySeverity = getEntrySeverity(item);
+    const severityColor = getSeverityColor(entrySeverity, colors);
+
+    return (
+      <View style={[styles.entryCard, { borderLeftColor: severityColor }]}>
+        <View style={styles.entryHeader}>
+          <View style={styles.dateContainer}>
+            <Text style={styles.entryDate}>{formatDate(item.timestamp)}</Text>
+            <Text style={[styles.severityLabel, { color: severityColor }]}>
+              {entrySeverity}
             </Text>
-          )}
+          </View>
+          <TouchableOpacity
+            onPress={() => handleDelete(item.id)}
+            style={[styles.deleteButton, { minHeight: touchTargetSize }]}
+            accessible={true}
+            accessibilityLabel="Delete entry"
+            accessibilityRole="button"
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.severityRough} />
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
-  );
+
+        <Text style={styles.entryText} numberOfLines={3}>
+          "{item.text}"
+        </Text>
+
+        {item.symptoms.length > 0 && (
+          <View style={styles.symptomsList}>
+            {item.symptoms.map((symptom, index) => {
+              const symptomSeverityColor = getSeverityColor(symptom.severity, colors);
+              const symptomBgColor = getSeverityBackgroundColor(symptom.severity, colors);
+              const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+
+              // Build context parts
+              const contextParts: string[] = [];
+              if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
+              if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
+              if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
+              const contextText = contextParts.join(' · ');
+
+              // Pain location
+              const painLocation = symptom.painDetails?.location;
+
+              return (
+                <View
+                  key={`${item.id}-${index}`}
+                  style={[styles.symptomItem, { backgroundColor: symptomBgColor }]}
+                >
+                  <View style={styles.symptomMainRow}>
+                    <Text style={[styles.symptomName, { color: symptomSeverityColor }]}>
+                      {displayName}
+                      {painLocation && (
+                        <Text style={styles.symptomLocation}> ({painLocation})</Text>
+                      )}
+                    </Text>
+                    {symptom.severity && (
+                      <Text style={[styles.symptomSeverityBadge, { color: symptomSeverityColor }]}>
+                        {symptom.severity}
+                      </Text>
+                    )}
+                  </View>
+                  {contextText.length > 0 && (
+                    <Text style={styles.symptomContext}>{contextText}</Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+    );
+  };
 
   if (loading) {
     return (
@@ -158,14 +211,23 @@ export function HistoryScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>History</Text>
+        <Text style={styles.subtitle}>{entries.length} entries</Text>
+      </View>
       <FlatList
         data={entries}
         renderItem={renderEntry}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accentPrimary}
+          />
         }
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -175,72 +237,96 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,
+    paddingTop: 50,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 16,
+    gap: 2,
+  },
+  title: {
+    ...typography.largeDisplay,
+    color: colors.textPrimary,
+  },
+  subtitle: {
+    ...typography.sectionHeader,
+    color: colors.textSecondary,
   },
   listContent: {
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    gap: 14,
   },
   entryCard: {
     backgroundColor: colors.bgSecondary,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: colors.bgElevated,
+    borderLeftWidth: 4,
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  entryDate: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontFamily: 'DMSans_500Medium',
-  },
-  deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  deleteButtonText: {
-    ...typography.caption,
-    color: colors.severityRough,
-    fontFamily: 'DMSans_500Medium',
-  },
-  entryText: {
-    ...typography.small,
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  symptomTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  symptomTag: {
+  dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgElevated,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
+    gap: 10,
   },
-  severityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  symptomTagText: {
-    ...typography.caption,
+  entryDate: {
+    ...typography.small,
     color: colors.textSecondary,
     fontFamily: 'DMSans_500Medium',
   },
-  moreSymptoms: {
+  severityLabel: {
+    ...typography.caption,
+    fontFamily: 'DMSans_700Bold',
+    textTransform: 'capitalize',
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  entryText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: 14,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  symptomsList: {
+    gap: 8,
+  },
+  symptomItem: {
+    borderRadius: 10,
+    padding: 10,
+  },
+  symptomMainRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  symptomName: {
+    ...typography.small,
+    fontFamily: 'DMSans_500Medium',
+    flex: 1,
+  },
+  symptomLocation: {
+    ...typography.small,
+    fontStyle: 'italic',
+  },
+  symptomSeverityBadge: {
+    ...typography.caption,
+    fontFamily: 'DMSans_500Medium',
+    textTransform: 'capitalize',
+    marginLeft: 8,
+  },
+  symptomContext: {
     ...typography.caption,
     color: colors.textMuted,
-    alignSelf: 'center',
-    marginLeft: 4,
+    marginTop: 4,
   },
   emptyContainer: {
     flex: 1,
@@ -249,13 +335,12 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     padding: 32,
   },
   emptyTitle: {
-    ...typography.bodyMedium,
-    fontSize: 18,
+    ...typography.largeHeader,
     color: colors.textSecondary,
     marginBottom: 8,
   },
   emptyText: {
-    ...typography.small,
+    ...typography.body,
     color: colors.textMuted,
     textAlign: 'center',
   },

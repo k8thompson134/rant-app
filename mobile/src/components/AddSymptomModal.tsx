@@ -13,8 +13,8 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { EditableSymptom, Severity, SYMPTOM_DISPLAY_NAMES } from '../types';
-import { SeverityPicker } from './SeverityPicker';
+import { EditableSymptom, SYMPTOM_DISPLAY_NAMES } from '../types';
+import { SymptomDetailEditor } from './SymptomDetailEditor';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
 import { typography as baseTypography } from '../theme/typography';
@@ -37,8 +37,8 @@ export function AddSymptomModal({
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const touchTargetSize = useTouchTargetSize();
   const [searchText, setSearchText] = useState('');
-  const [selectedSymptom, setSelectedSymptom] = useState<string | null>(null);
-  const [showSeverityPicker, setShowSeverityPicker] = useState(false);
+  const [selectedSymptom, setSelectedSymptom] = useState<EditableSymptom | null>(null);
+  const [showDetailEditor, setShowDetailEditor] = useState(false);
 
   // Get all available symptoms (not already added)
   const allSymptoms = Object.keys(SYMPTOM_DISPLAY_NAMES).filter(
@@ -51,29 +51,45 @@ export function AddSymptomModal({
     return displayName.includes(searchText.toLowerCase());
   });
 
-  const handleSymptomSelect = (symptom: string) => {
-    setSelectedSymptom(symptom);
-    setShowSeverityPicker(true);
+  const handleSymptomSelect = (symptomType: string) => {
+    // Create a blank symptom object with all fields ready for editing
+    const newSymptom: EditableSymptom = {
+      symptom: symptomType,
+      matched: SYMPTOM_DISPLAY_NAMES[symptomType],
+      method: 'phrase', // Manual additions are marked as phrase
+      severity: null,
+      id: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      // All other fields undefined by default
+    };
+    setSelectedSymptom(newSymptom);
+    setShowDetailEditor(true);
   };
 
-  const handleSeveritySelect = (severity: Severity | null) => {
+  const handleDetailUpdate = (updates: Partial<EditableSymptom>) => {
     if (selectedSymptom) {
-      const newSymptom: EditableSymptom = {
-        symptom: selectedSymptom,
-        matched: SYMPTOM_DISPLAY_NAMES[selectedSymptom],
-        method: 'phrase', // Manual additions are marked as phrase
-        severity,
-        id: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      // Update the local symptom state instead of immediately calling onAdd
+      // This allows users to set multiple fields before saving
+      const updatedSymptom: EditableSymptom = {
+        ...selectedSymptom,
+        ...updates,
       };
-      onAdd(newSymptom);
-      handleClose();
+      setSelectedSymptom(updatedSymptom);
     }
+  };
+
+  const handleDetailEditorDismiss = () => {
+    // When user closes the detail editor, save the symptom with all accumulated changes
+    if (selectedSymptom) {
+      onAdd(selectedSymptom);
+    }
+    setShowDetailEditor(false);
+    handleClose();
   };
 
   const handleClose = () => {
     setSearchText('');
     setSelectedSymptom(null);
-    setShowSeverityPicker(false);
+    setShowDetailEditor(false);
     onDismiss();
   };
 
@@ -133,12 +149,11 @@ export function AddSymptomModal({
       </Modal>
 
       {selectedSymptom && (
-        <SeverityPicker
-          visible={showSeverityPicker}
-          symptomName={SYMPTOM_DISPLAY_NAMES[selectedSymptom]}
-          currentSeverity={null}
-          onSelect={handleSeveritySelect}
-          onDismiss={() => setShowSeverityPicker(false)}
+        <SymptomDetailEditor
+          visible={showDetailEditor}
+          symptom={selectedSymptom}
+          onUpdate={handleDetailUpdate}
+          onDismiss={handleDetailEditorDismiss}
         />
       )}
     </>

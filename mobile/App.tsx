@@ -31,6 +31,8 @@ import { ReviewEntryScreen } from './src/screens/ReviewEntryScreen';
 import { QuickAddEntryScreen } from './src/screens/QuickAddEntryScreen';
 import { VoiceRecordingScreen } from './src/screens/VoiceRecordingScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import CatchUpScreen from './src/screens/CatchUpScreen';
+import CatchUpReviewScreen from './src/screens/CatchUpReviewScreen';
 import type { HomeStackParamList, MonthStackParamList, RootTabParamList } from './src/types/navigation';
 import { darkTheme } from './src/theme/colors';
 import { AccessibilityProvider, useTheme } from './src/contexts/AccessibilityContext';
@@ -41,87 +43,6 @@ const colors = darkTheme;
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const MonthStack = createNativeStackNavigator<MonthStackParamList>();
-
-/**
- * Home Stack Navigator - handles rant input and review flow
- */
-function HomeStackNavigator() {
-  return (
-    <HomeStack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <HomeStack.Screen
-        name="HomeInput"
-        component={HomeScreen}
-      />
-      <HomeStack.Screen
-        name="ReviewEntry"
-        component={ReviewEntryScreen}
-        options={{
-          headerShown: true,
-          title: 'Review Entry',
-          headerBackTitle: 'Back',
-          headerStyle: {
-            backgroundColor: colors.bgPrimary,
-          },
-          headerTintColor: colors.textPrimary,
-        }}
-      />
-      <HomeStack.Screen
-        name="VoiceRecording"
-        component={VoiceRecordingScreen}
-        options={{
-          headerShown: false,
-          presentation: 'fullScreenModal',
-          animation: 'fade',
-        }}
-      />
-    </HomeStack.Navigator>
-  );
-}
-
-/**
- * Month Stack Navigator - handles month view and quick entry
- */
-function MonthStackNavigator() {
-  return (
-    <MonthStack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <MonthStack.Screen
-        name="MonthView"
-        component={MonthScreen}
-      />
-      <MonthStack.Screen
-        name="QuickAddEntry"
-        component={QuickAddEntryScreen}
-        options={{
-          headerShown: true,
-          title: 'Add Entry',
-          headerBackTitle: 'Back',
-          headerStyle: {
-            backgroundColor: colors.bgPrimary,
-          },
-          headerTintColor: colors.textPrimary,
-          presentation: 'modal',
-        }}
-      />
-      <MonthStack.Screen
-        name="VoiceRecording"
-        component={VoiceRecordingScreen}
-        options={{
-          headerShown: false,
-          presentation: 'fullScreenModal',
-          animation: 'fade',
-        }}
-      />
-    </MonthStack.Navigator>
-  );
-}
 
 export default function App() {
   const [isDbReady, setIsDbReady] = useState(false);
@@ -174,6 +95,113 @@ export default function App() {
 }
 
 /**
+ * Themed Home Stack Navigator
+ */
+function ThemedHomeStack() {
+  const colors = useTheme();
+
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <HomeStack.Screen
+        name="HomeInput"
+        component={HomeScreen}
+      />
+      <HomeStack.Screen
+        name="ReviewEntry"
+        component={ReviewEntryScreen}
+        options={{
+          headerShown: true,
+          title: 'Review Entry',
+          headerBackTitle: 'Back',
+          headerStyle: {
+            backgroundColor: colors.bgSecondary,
+          },
+          headerTintColor: colors.textPrimary,
+          headerTitleStyle: {
+            color: colors.textPrimary,
+          },
+        }}
+      />
+      <HomeStack.Screen
+        name="VoiceRecording"
+        component={VoiceRecordingScreen}
+        options={{
+          headerShown: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+        }}
+      />
+      <HomeStack.Screen
+        name="CatchUp"
+        component={CatchUpScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <HomeStack.Screen
+        name="CatchUpReview"
+        component={CatchUpReviewScreen}
+        options={{
+          headerShown: false,
+          presentation: 'card',
+        }}
+      />
+    </HomeStack.Navigator>
+  );
+}
+
+/**
+ * Themed Month Stack Navigator
+ */
+function ThemedMonthStack() {
+  const colors = useTheme();
+
+  return (
+    <MonthStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <MonthStack.Screen
+        name="MonthView"
+        component={MonthScreen}
+      />
+      <MonthStack.Screen
+        name="QuickAddEntry"
+        component={QuickAddEntryScreen}
+        options={{
+          headerShown: true,
+          title: 'Add Entry',
+          headerBackTitle: 'Back',
+          headerStyle: {
+            backgroundColor: colors.bgSecondary,
+          },
+          headerTintColor: colors.textPrimary,
+          headerTitleStyle: {
+            color: colors.textPrimary,
+          },
+          presentation: 'modal',
+        }}
+      />
+      <MonthStack.Screen
+        name="VoiceRecording"
+        component={VoiceRecordingScreen}
+        options={{
+          headerShown: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+        }}
+      />
+    </MonthStack.Navigator>
+  );
+}
+
+/**
  * ThemedApp component that uses theme from AccessibilityContext
  * Wrapped inside AccessibilityProvider to access theme context
  */
@@ -199,7 +227,7 @@ function ThemedApp() {
         >
           <Tab.Screen
             name="Home"
-            component={HomeStackNavigator}
+            component={ThemedHomeStack}
             options={{
               tabBarLabel: 'Rant',
               tabBarIcon: ({ color, size }) => (
@@ -209,7 +237,7 @@ function ThemedApp() {
           />
           <Tab.Screen
             name="Month"
-            component={MonthStackNavigator}
+            component={ThemedMonthStack}
             options={{
               tabBarLabel: 'Month',
               tabBarIcon: ({ color, size }) => (

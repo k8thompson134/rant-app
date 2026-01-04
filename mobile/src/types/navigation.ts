@@ -2,7 +2,19 @@
  * Navigation type definitions for React Navigation
  */
 
-import { ExtractionResult } from './index';
+import { ExtractionResult, ExtractedSymptom, SpoonCount } from './index';
+
+/**
+ * Day entry for catch-up flow
+ */
+export interface DayEntry {
+  timestamp: number;
+  dateString: string;
+  text: string;
+  symptoms: ExtractedSymptom[];
+  explicit: boolean;
+  spoonCount?: SpoonCount;
+}
 
 /**
  * Home Stack Navigator - handles rant input and review flow
@@ -17,6 +29,10 @@ export type HomeStackParamList = {
   };
   VoiceRecording: {
     returnScreen: string;
+  };
+  CatchUp: undefined;
+  CatchUpReview: {
+    dayEntries: DayEntry[];
   };
 };
 
