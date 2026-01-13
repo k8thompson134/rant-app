@@ -23,6 +23,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VoiceInput } from '../components/VoiceInput';
 import { extractSymptoms } from '../nlp/extractor';
+import { useCustomLemmas } from '../contexts/CustomLemmasContext';
 import { segmentByDate, groupSegmentsByDate, validateAndFixDates } from '../nlp/dateExtractor';
 import type { HomeStackParamList, DayEntry } from '../types/navigation';
 import { darkTheme } from '../theme/colors';
@@ -33,6 +34,7 @@ type CatchUpScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList,
 
 export default function CatchUpScreen() {
   const navigation = useNavigation<CatchUpScreenNavigationProp>();
+  const { customLemmas } = useCustomLemmas();
   const [accumulatedText, setAccumulatedText] = useState('');
   const [dayEntries, setDayEntries] = useState<DayEntry[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -73,7 +75,7 @@ export default function CatchUpScreen() {
 
       // Extract symptoms for each day
       const entries: DayEntry[] = fixedSegments.map((segment) => {
-        const extraction = extractSymptoms(segment.text);
+        const extraction = extractSymptoms(segment.text, customLemmas);
         return {
           timestamp: segment.timestamp,
           dateString: segment.dateString,

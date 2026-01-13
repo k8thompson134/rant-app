@@ -16,6 +16,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
+import { useCustomLemmas } from '../contexts/CustomLemmasContext';
 import { EditableSymptom, Severity } from '../types';
 import { saveRantEntry } from '../database/operations';
 import { SymptomChip } from '../components/SymptomChip';
@@ -31,6 +32,7 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
+  const { customLemmas } = useCustomLemmas();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const date = new Date(route.params.dateTimestamp);
   const [symptoms, setSymptoms] = useState<EditableSymptom[]>([]);
@@ -49,7 +51,7 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
       setNotes(text);
 
       // Extract symptoms from voice input
-      const extractionResult = extractSymptoms(text);
+      const extractionResult = extractSymptoms(text, customLemmas);
       console.log('Extracted symptoms from voice:', extractionResult.symptoms);
 
       // Add extracted symptoms to the list with IDs
@@ -71,7 +73,7 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
 
       setSymptoms(mergedSymptoms);
     }
-  }, [route.params.voiceText]);
+  }, [route.params.voiceText, customLemmas]);
 
   const formatDate = () => {
     const today = new Date();

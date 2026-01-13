@@ -20,6 +20,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RecordingOverlay } from '../components/RecordingOverlay';
 import { useTheme, useTypography } from '../contexts/AccessibilityContext';
+import { useCustomLemmas } from '../contexts/CustomLemmasContext';
 import { darkTheme } from '../theme/colors';
 import { extractSymptoms } from '../nlp/extractor';
 
@@ -34,6 +35,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'VoiceRecording'>;
 export function VoiceRecordingScreen({ route, navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
+  const { customLemmas } = useCustomLemmas();
   const [isRecording, setIsRecording] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -180,6 +182,10 @@ export function VoiceRecordingScreen({ route, navigation }: Props) {
         requiresOnDeviceRecognition: false,
         addsPunctuation: true,
         contextualStrings: ['symptom', 'pain', 'fatigue', 'nausea', 'headache'],
+        // Allow explicit language - important for authentic symptom expression
+        androidIntentOptions: {
+          EXTRA_MASK_OFFENSIVE_WORDS: false,
+        },
       });
     } catch (error) {
       console.error('Failed to start recording:', error);
@@ -206,7 +212,7 @@ export function VoiceRecordingScreen({ route, navigation }: Props) {
   const handleComplete = (text: string) => {
     // If coming from HomeInput, go directly to ReviewEntry
     if (route.params.returnScreen === 'HomeInput') {
-      const extractionResult = extractSymptoms(text);
+      const extractionResult = extractSymptoms(text, customLemmas);
       navigation.navigate('ReviewEntry' as any, {
         rantText: text,
         extractionResult,

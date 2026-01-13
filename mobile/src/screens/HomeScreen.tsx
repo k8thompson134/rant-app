@@ -17,6 +17,7 @@ import { QuickActionChips } from '../components/QuickActionChips';
 import { QuickCheckInModal } from '../components/QuickCheckInModal';
 import { extractSymptoms } from '../nlp/extractor';
 import { getAllRantEntries, getDraftEntry, clearDraftEntry, saveRantEntry } from '../database/operations';
+import { getCustomLemmasMap } from '../database/customLemmaOps';
 import { RantEntry } from '../types';
 import { useAccessibilitySettings, useTheme, useTypography } from '../contexts/AccessibilityContext';
 
@@ -104,7 +105,8 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
       setIsSaving(true);
 
       // Extract symptoms
-      const extractionResult = extractSymptoms(text);
+      const customLemmas = await getCustomLemmasMap();
+      const extractionResult = extractSymptoms(text, customLemmas);
 
       // Navigate to review screen
       navigation.navigate('ReviewEntry', {

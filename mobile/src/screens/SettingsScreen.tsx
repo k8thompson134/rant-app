@@ -3,7 +3,7 @@
  * Accessibility and app customization settings
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -21,12 +21,18 @@ import * as Clipboard from 'expo-clipboard';
 import * as Device from 'expo-device';
 import { useAccessibilitySettings, useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import type { FontSize, TouchTargetSize, ThemeMode } from '../types/accessibility';
+import { ExportDataModal } from '../components/ExportDataModal';
+import { getAllRantEntries } from '../database/operations';
+import type { RantEntry } from '../types';
 
 export function SettingsScreen() {
   const { settings, updateSetting, resetSettings } = useAccessibilitySettings();
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [entries, setEntries] = useState<RantEntry[]>([]);
 
   // Create dynamic styles based on current typography and theme
   const styles = useMemo(() => createStyles(typography, colors), [typography, colors]);
@@ -105,6 +111,16 @@ Accessibility Settings:
     );
   };
 
+  const handleOpenExport = useCallback(async () => {
+    try {
+      const allEntries = await getAllRantEntries();
+      setEntries(allEntries);
+      setShowExportModal(true);
+    } catch (error) {
+      Alert.alert('Error', 'Could not load entries for export');
+    }
+  }, []);
+
   // Get version and build number
   const appVersion = Constants.expoConfig?.version || '0.9.0';
   const buildNumber = Platform.OS === 'ios'
@@ -156,6 +172,29 @@ Accessibility Settings:
             onValueChange={(value) => updateSetting('showQuickActions', value)}
             touchTargetSize={touchTargetSize}
           />
+        </View>
+
+        {/* Your Data Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your Data</Text>
+          <Text style={styles.sectionDescription}>
+            Download or manage your symptom data
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.aboutRow, { minHeight: touchTargetSize }]}
+            onPress={handleOpenExport}
+            accessible={true}
+            accessibilityLabel="Download symptom data"
+            accessibilityRole="button"
+            accessibilityHint="Choose format and date range to download your entries"
+          >
+            <View style={styles.settingHeader}>
+              <Ionicons name="download-outline" size={20} color={colors.accentPrimary} />
+              <Text style={styles.aboutLabel}>Download Data</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* Appearance Section */}
@@ -361,6 +400,13 @@ Accessibility Settings:
           </Text>
         </View>
       </ScrollView>
+
+      {/* Export Modal */}
+      <ExportDataModal
+        visible={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        entries={entries}
+      />
     </View>
   );
 }
