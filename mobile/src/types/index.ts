@@ -1042,3 +1042,217 @@ export function formatSpoonCount(spoons?: SpoonCount): string {
   // Basic format with energy level
   return `${spoons.current} ${spoonLabel} (${spoons.energyLevel}/10 energy)`;
 }
+
+// ==================== Export Types ====================
+
+/**
+ * Supported export file formats
+ */
+export type ExportFormat = 'csv' | 'json' | 'txt';
+
+/**
+ * Preset date range options for export filtering
+ */
+export type DateRangePreset =
+  | 'last_7_days'
+  | 'last_30_days'
+  | 'last_90_days'
+  | 'this_month'
+  | 'last_month'
+  | 'this_year'
+  | 'all_time'
+  | 'custom';
+
+/**
+ * Date range filter for export queries
+ */
+export interface DateRangeFilter {
+  /** The preset range type */
+  preset: DateRangePreset;
+  /** Start date (ISO string or timestamp) - required for 'custom' preset */
+  startDate?: string | number;
+  /** End date (ISO string or timestamp) - required for 'custom' preset */
+  endDate?: string | number;
+}
+
+/**
+ * Export configuration options
+ */
+export interface ExportOptions {
+  /** File format for the export */
+  format: ExportFormat;
+  /** Date range filter for entries */
+  dateRange: DateRangeFilter;
+  /** Include symptom details in export (default: true) */
+  includeSymptoms?: boolean;
+  /** Include raw text in export (default: true) */
+  includeRawText?: boolean;
+  /** Include timestamps in export (default: true) */
+  includeTimestamps?: boolean;
+  /** Pretty-print JSON output (default: false) */
+  prettyJson?: boolean;
+  /** CSV delimiter character (default: ',') */
+  csvDelimiter?: ',' | ';' | '\t';
+  /** Include header row in CSV (default: true) */
+  csvIncludeHeaders?: boolean;
+}
+
+/**
+ * Result of an export operation
+ */
+export interface ExportResult {
+  /** Success status */
+  success: true;
+  /** Export format used */
+  format: ExportFormat;
+  /** File URI (for expo-file-system) */
+  fileUri: string;
+  /** File name */
+  fileName: string;
+  /** Number of entries exported */
+  entryCount: number;
+  /** File size in bytes */
+  fileSizeBytes: number;
+  /** Export timestamp */
+  exportedAt: number;
+}
+
+/**
+ * Export operation error
+ */
+export interface ExportError {
+  /** Failure status */
+  success: false;
+  /** Error type for programmatic handling */
+  errorType: ExportErrorType;
+  /** Human-readable error message */
+  message: string;
+  /** Optional error details for debugging */
+  details?: string;
+}
+
+/**
+ * Export error types
+ */
+export type ExportErrorType =
+  | 'no_entries_found'
+  | 'invalid_date_range'
+  | 'file_system_error'
+  | 'permission_denied'
+  | 'serialization_error'
+  | 'unknown_error';
+
+/**
+ * Discriminated union for export operation results
+ * Ensures compile-time type safety when handling success/failure
+ */
+export type ExportOperationResult = ExportResult | ExportError;
+
+/**
+ * Flattened entry for CSV export
+ * All nested structures are serialized to strings
+ */
+export interface FlattenedEntry {
+  id: string;
+  date: string;
+  time: string;
+  text: string;
+  symptomCount: number;
+  symptoms: string; // Comma-separated symptom names
+  severities: string; // Comma-separated severity levels
+  painLocations: string; // Comma-separated body locations
+  triggers: string; // Comma-separated trigger activities
+  spoonCount: string; // Formatted spoon count or empty
+  energyLevel: string; // 0-10 scale or empty
+}
+
+/**
+ * JSON export structure (preserves full type information)
+ */
+export interface JsonExportData {
+  /** Export metadata */
+  metadata: {
+    exportedAt: string; // ISO timestamp
+    entryCount: number;
+    dateRange: {
+      start: string | null; // ISO timestamp or null for all-time
+      end: string | null; // ISO timestamp or null for all-time
+    };
+    version: string; // RantTrack version
+  };
+  /** Array of full entry objects */
+  entries: RantEntry[];
+}
+
+/**
+ * Type guard to check if export result is successful
+ */
+export function isExportSuccess(result: ExportOperationResult): result is ExportResult {
+  return result.success === true;
+}
+
+/**
+ * Type guard to check if export result is an error
+ */
+export function isExportError(result: ExportOperationResult): result is ExportError {
+  return result.success === false;
+}
+
+/**
+ * Preset date range to actual dates converter result
+ */
+export interface ResolvedDateRange {
+  /** Start timestamp (milliseconds since epoch) */
+  startTimestamp: number;
+  /** End timestamp (milliseconds since epoch) */
+  endTimestamp: number;
+  /** Human-readable description */
+  description: string;
+}
+
+/**
+ * Share options for exported files (React Native Share API compatible)
+ */
+export interface ShareOptions {
+  /** Title for the share dialog */
+  title?: string;
+  /** Message to accompany the shared file */
+  message?: string;
+  /** File URL to share */
+  url: string;
+  /** Subject line (for email) */
+  subject?: string;
+}
+
+/**
+ * Export statistics for UI display
+ */
+export interface ExportStats {
+  /** Total number of entries in export */
+  totalEntries: number;
+  /** Total number of unique symptoms across all entries */
+  uniqueSymptoms: number;
+  /** Date range covered by the export */
+  dateRange: {
+    earliest: string; // ISO date string
+    latest: string; // ISO date string
+  };
+  /** Average symptoms per entry */
+  avgSymptomsPerEntry: number;
+}
+
+// ==================== Custom Lemmas ====================
+
+/**
+ * Custom symptom word entry
+ * Allows users to add their own words that map to existing symptoms
+ */
+export interface CustomLemmaEntry {
+  id: string;
+  /** The user's custom word (lowercase, trimmed) */
+  word: string;
+  /** The symptom this word maps to */
+  symptom: string;
+  /** When the custom word was added (timestamp) */
+  createdAt: number;
+}

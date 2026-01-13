@@ -56,6 +56,16 @@ export type MonthStackParamList = {
 export type RootTabParamList = {
   Home: undefined;
   Month: undefined;
-  History: undefined;
+  Insights: undefined;
+  Dictionary: undefined;
+  Guide: undefined;
   Settings: undefined;
 };
+
+/**
+ * Settings Stack Navigator - handles settings screens
+ */
+export type SettingsStackParamList = {
+  SettingsMain: undefined;
+};
+
