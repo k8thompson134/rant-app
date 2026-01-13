@@ -2943,10 +2943,23 @@ function linkTriggersToSymptoms(
   });
 }
 
-export function extractSymptoms(text: string): ExtractionResult {
+/**
+ * Extract symptoms from text
+ * @param text - The input text to analyze
+ * @param customLemmas - Optional map of custom user words to symptoms
+ */
+export function extractSymptoms(
+  text: string,
+  customLemmas?: Record<string, string>
+): ExtractionResult {
   const textLower = text.toLowerCase();
   const foundSymptoms: ExtractedSymptom[] = [];
   const foundCategories = new Set<string>();
+
+  // Merge standard lemmas with custom lemmas (custom takes precedence)
+  const allLemmas = customLemmas
+    ? { ...SYMPTOM_LEMMAS, ...customLemmas }
+    : SYMPTOM_LEMMAS;
 
   // Step 1: Extract numeric severity ratings
   const numericSeverities = extractNumericSeverity(text);
@@ -3041,14 +3054,43 @@ export function extractSymptoms(text: string): ExtractionResult {
     }
   }
 
+  // Step 2.5: Extract multi-word custom lemmas (phrases)
+  // Custom lemmas can be multi-word phrases like "brain is shit"
+  // These need to be matched as phrases before single-word tokenization
+  if (customLemmas) {
+    // Sort by length (longest first) to match longer phrases before shorter ones
+    const sortedCustomLemmas = Object.entries(customLemmas).sort(
+      (a, b) => b[0].length - a[0].length
+    );
+
+    for (const [phrase, symptom] of sortedCustomLemmas) {
+      // Check if it's a multi-word phrase (contains space)
+      if (phrase.includes(' ') && textLower.includes(phrase) && !foundCategories.has(symptom)) {
+        const phraseIndex = textLower.indexOf(phrase);
+        const detectedSeverity = findSeverity(textLower, phraseIndex);
+
+        const finalSeverity = severityMap.get(symptom) ||
+                             assignDefaultSeverity(symptom, text, detectedSeverity);
+
+        foundSymptoms.push({
+          symptom,
+          matched: phrase,
+          method: 'phrase',
+          severity: finalSeverity,
+        });
+        foundCategories.add(symptom);
+      }
+    }
+  }
+
   // Step 3: Extract lemma-based symptoms
   const tokens = tokenize(text);
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
 
-    if (SYMPTOM_LEMMAS[token]) {
-      const symptom = SYMPTOM_LEMMAS[token];
+    if (allLemmas[token]) {
+      const symptom = allLemmas[token];
 
       if (!foundCategories.has(symptom) && !isNegated(tokens, i)) {
         const detectedSeverity = findSeverity(textLower, i);
