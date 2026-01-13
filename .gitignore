@@ -72,3 +72,6 @@ nul
 
 # Claude Code internal
 .claude/
+
+# Personal dev notes
+.dev/

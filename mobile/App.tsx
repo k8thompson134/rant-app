@@ -25,17 +25,20 @@ import { initDatabase } from './src/database/db';
 import { getAllRantEntries } from './src/database/operations';
 import { seedSampleData } from './src/database/seed';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { HistoryScreen } from './src/screens/HistoryScreen';
 import { MonthScreen } from './src/screens/MonthScreen';
 import { ReviewEntryScreen } from './src/screens/ReviewEntryScreen';
 import { QuickAddEntryScreen } from './src/screens/QuickAddEntryScreen';
 import { VoiceRecordingScreen } from './src/screens/VoiceRecordingScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { GuideScreen } from './src/screens/GuideScreen';
+import { DictionaryScreen } from './src/screens/DictionaryScreen';
+import InsightsScreen from './src/screens/InsightsScreen';
 import CatchUpScreen from './src/screens/CatchUpScreen';
 import CatchUpReviewScreen from './src/screens/CatchUpReviewScreen';
-import type { HomeStackParamList, MonthStackParamList, RootTabParamList } from './src/types/navigation';
+import type { HomeStackParamList, MonthStackParamList, SettingsStackParamList, RootTabParamList } from './src/types/navigation';
 import { darkTheme } from './src/theme/colors';
 import { AccessibilityProvider, useTheme } from './src/contexts/AccessibilityContext';
+import { CustomLemmasProvider } from './src/contexts/CustomLemmasContext';
 
 // Use darkTheme directly to avoid bundling issues
 const colors = darkTheme;
@@ -43,6 +46,7 @@ const colors = darkTheme;
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const MonthStack = createNativeStackNavigator<MonthStackParamList>();
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
 export default function App() {
   const [isDbReady, setIsDbReady] = useState(false);
@@ -89,7 +93,9 @@ export default function App() {
 
   return (
     <AccessibilityProvider>
-      <ThemedApp />
+      <CustomLemmasProvider>
+        <ThemedApp />
+      </CustomLemmasProvider>
     </AccessibilityProvider>
   );
 }
@@ -202,6 +208,24 @@ function ThemedMonthStack() {
 }
 
 /**
+ * Themed Settings Stack Navigator
+ */
+function ThemedSettingsStack() {
+  return (
+    <SettingsStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <SettingsStack.Screen
+        name="SettingsMain"
+        component={SettingsScreen}
+      />
+    </SettingsStack.Navigator>
+  );
+}
+
+/**
  * ThemedApp component that uses theme from AccessibilityContext
  * Wrapped inside AccessibilityProvider to access theme context
  */
@@ -246,18 +270,38 @@ function ThemedApp() {
             }}
           />
           <Tab.Screen
-            name="History"
-            component={HistoryScreen}
+            name="Insights"
+            component={InsightsScreen}
             options={{
-              tabBarLabel: 'History',
+              tabBarLabel: 'Insights',
               tabBarIcon: ({ color, size }) => (
-                <Ionicons name="time-outline" size={size} color={color} />
+                <Ionicons name="analytics-outline" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Dictionary"
+            component={DictionaryScreen}
+            options={{
+              tabBarLabel: 'Dictionary',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="book-outline" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Guide"
+            component={GuideScreen}
+            options={{
+              tabBarLabel: 'Guide',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="help-circle-outline" size={size} color={color} />
               ),
             }}
           />
           <Tab.Screen
             name="Settings"
-            component={SettingsScreen}
+            component={ThemedSettingsStack}
             options={{
               tabBarLabel: 'Settings',
               tabBarIcon: ({ color, size}) => (
