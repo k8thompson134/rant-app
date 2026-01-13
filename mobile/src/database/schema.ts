@@ -24,3 +24,23 @@ export const rants = sqliteTable('rants', {
 
 export type Rant = typeof rants.$inferSelect;
 export type NewRant = typeof rants.$inferInsert;
+
+/**
+ * Custom symptom words table
+ * Allows users to add their own words that map to existing symptoms
+ * Example: "wibbly" -> "dizziness", "zonked" -> "fatigue"
+ */
+export const customLemmas = sqliteTable('custom_lemmas', {
+  id: text('id').primaryKey(),
+  // The user's custom word (lowercase, trimmed)
+  word: text('word').notNull().unique(),
+  // The symptom this word maps to (must be a valid symptom from SYMPTOM_LEMMAS values)
+  symptom: text('symptom').notNull(),
+  // When the custom word was added
+  createdAt: integer('created_at')
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export type CustomLemma = typeof customLemmas.$inferSelect;
+export type NewCustomLemma = typeof customLemmas.$inferInsert;

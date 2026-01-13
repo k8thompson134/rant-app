@@ -13,7 +13,7 @@ const expoDb = Platform.OS !== 'web' ? SQLite.openDatabaseSync('ranttrack.db') :
 
 export const db = expoDb ? drizzle(expoDb, { schema }) : null;
 
-const DB_VERSION = 2; // Increment when schema changes
+const DB_VERSION = 3; // Increment when schema changes
 
 /**
  * Get current database version
@@ -102,6 +102,23 @@ export async function initDatabase() {
 
       await setDbVersion(2);
       console.log('Database migrated to version 2');
+    }
+
+    // Migration to version 3: Add custom_lemmas table
+    if (currentVersion < 3) {
+      console.log('Migrating database to version 3...');
+
+      await expoDb.execAsync(`
+        CREATE TABLE IF NOT EXISTS custom_lemmas (
+          id TEXT PRIMARY KEY,
+          word TEXT NOT NULL UNIQUE,
+          symptom TEXT NOT NULL,
+          created_at INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+      `);
+
+      await setDbVersion(3);
+      console.log('Database migrated to version 3 - added custom_lemmas table');
     }
 
     console.log('Database initialized successfully');

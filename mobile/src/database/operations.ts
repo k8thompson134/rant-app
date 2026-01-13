@@ -4,9 +4,9 @@
 
 import { Platform } from 'react-native';
 import { db } from './db';
-import { rants } from './schema';
-import { desc, eq } from 'drizzle-orm';
-import { RantEntry, ExtractedSymptom } from '../types';
+import { rants, customLemmas } from './schema';
+import { desc, eq, and, gte, lte } from 'drizzle-orm';
+import { RantEntry, ExtractedSymptom, DateRangeFilter, ResolvedDateRange, CustomLemmaEntry } from '../types';
 
 /**
  * Generate a unique ID for a rant entry
@@ -340,4 +340,174 @@ export async function promoteDraftToEntry(draftId: string): Promise<RantEntry> {
     console.error('Failed to promote draft:', error);
     throw error;
   }
+}
+
+// ==================== Export Operations ====================
+
+/**
+ * Resolve a date range preset to actual timestamps
+ * @param filter - The date range filter to resolve
+ * @returns Resolved date range with start/end timestamps and description
+ */
+export function resolveDateRange(filter: DateRangeFilter): ResolvedDateRange {
+  const now = new Date();
+  let startTimestamp: number;
+  let endTimestamp = now.getTime();
+  let description: string;
+
+  switch (filter.preset) {
+    case 'last_7_days':
+      startTimestamp = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      description = 'Last 7 days';
+      break;
+
+    case 'last_30_days':
+      startTimestamp = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      description = 'Last 30 days';
+      break;
+
+    case 'last_90_days':
+      startTimestamp = now.getTime() - 90 * 24 * 60 * 60 * 1000;
+      description = 'Last 90 days';
+      break;
+
+    case 'this_month': {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      startTimestamp = monthStart.getTime();
+      description = `${monthStart.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
+      break;
+    }
+
+    case 'last_month': {
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      startTimestamp = lastMonthStart.getTime();
+      endTimestamp = lastMonthEnd.getTime();
+      description = `${lastMonthStart.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
+      break;
+    }
+
+    case 'this_year': {
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      startTimestamp = yearStart.getTime();
+      description = `${now.getFullYear()}`;
+      break;
+    }
+
+    case 'all_time':
+      startTimestamp = 0; // Unix epoch
+      description = 'All time';
+      break;
+
+    case 'custom': {
+      // Validate custom range
+      if (!filter.startDate || !filter.endDate) {
+        throw new Error('Custom date range requires both startDate and endDate');
+      }
+
+      // Convert to timestamps if ISO strings provided
+      startTimestamp = typeof filter.startDate === 'string'
+        ? new Date(filter.startDate).getTime()
+        : filter.startDate;
+      endTimestamp = typeof filter.endDate === 'string'
+        ? new Date(filter.endDate).getTime()
+        : filter.endDate;
+
+      // Validate range
+      if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
+        throw new Error('Invalid date format in custom range');
+      }
+      if (startTimestamp > endTimestamp) {
+        throw new Error('Start date must be before end date');
+      }
+
+      const startDate = new Date(startTimestamp);
+      const endDate = new Date(endTimestamp);
+      description = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+      break;
+    }
+
+    default: {
+      // TypeScript exhaustiveness check
+      const _exhaustive: never = filter.preset;
+      throw new Error(`Unknown preset: ${_exhaustive}`);
+    }
+  }
+
+  return {
+    startTimestamp,
+    endTimestamp,
+    description,
+  };
+}
+
+/**
+ * Get rant entries within a specific date range
+ * Type-safe query with Drizzle ORM filters
+ * @param filter - Date range filter
+ * @returns Array of entries within the specified range
+ */
+export async function getRantEntriesByDateRange(
+  filter: DateRangeFilter
+): Promise<RantEntry[]> {
+  if (!isDatabaseAvailable()) {
+    return [];
+  }
+
+  try {
+    const { startTimestamp, endTimestamp } = resolveDateRange(filter);
+
+    const results = await db!
+      .select()
+      .from(rants)
+      .where(
+        and(
+          eq(rants.isDraft, false),
+          gte(rants.timestamp, startTimestamp),
+          lte(rants.timestamp, endTimestamp)
+        )
+      )
+      .orderBy(desc(rants.timestamp));
+
+    return results.map((row) => ({
+      id: row.id,
+      text: row.text,
+      timestamp: row.timestamp,
+      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+    }));
+  } catch (error) {
+    console.error('Failed to get entries by date range:', error);
+    throw error;
+  }
+}
+
+/**
+ * Validate date range filter
+ * Type guard that ensures filter is properly configured
+ * @param filter - Date range filter to validate
+ * @returns True if valid, throws error otherwise
+ */
+export function validateDateRangeFilter(filter: DateRangeFilter): boolean {
+  if (filter.preset === 'custom') {
+    if (!filter.startDate || !filter.endDate) {
+      throw new Error('Custom date range requires both startDate and endDate');
+    }
+
+    const startTimestamp = typeof filter.startDate === 'string'
+      ? new Date(filter.startDate).getTime()
+      : filter.startDate;
+    const endTimestamp = typeof filter.endDate === 'string'
+      ? new Date(filter.endDate).getTime()
+      : filter.endDate;
+
+    if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
+      throw new Error('Invalid date format in custom range');
+    }
+
+    if (startTimestamp > endTimestamp) {
+      throw new Error('Start date must be before end date');
+    }
+  }
+
+  return true;
 }
