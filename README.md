@@ -176,7 +176,7 @@ eas update --branch beta
 ### v1.1 (Planned)
 - [ ] Data export (CSV, PDF)
 - [ ] Symptom trends visualization
-- [ ] Custom symptom vocabulary
+- [x] Custom symptom vocabulary
 - [x] Light theme option
 
 ### v2.0 (Future)
