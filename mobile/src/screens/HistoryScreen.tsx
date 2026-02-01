@@ -2,7 +2,7 @@
  * HistoryScreen - View past rant entries
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getAllRantEntries, deleteRantEntry } from '../database/operations';
 import {
   RantEntry,
@@ -29,6 +31,7 @@ export function HistoryScreen() {
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [entries, setEntries] = useState<RantEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,6 +53,13 @@ export function HistoryScreen() {
   useEffect(() => {
     loadEntries();
   }, []);
+
+  // Reload entries when screen is focused (e.g. after adding an entry on another tab)
+  useFocusEffect(
+    useCallback(() => {
+      loadEntries();
+    }, [])
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -210,7 +220,7 @@ export function HistoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>History</Text>
         <Text style={styles.subtitle}>{entries.length} entries</Text>
@@ -237,7 +247,6 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,
-    paddingTop: 50,
   },
   header: {
     paddingHorizontal: 24,

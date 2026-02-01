@@ -83,7 +83,7 @@ export default function App() {
   if (!isDbReady || !fontsLoaded) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading...</Text>
         </View>

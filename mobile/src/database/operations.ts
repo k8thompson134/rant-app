@@ -5,7 +5,7 @@
 import { Platform } from 'react-native';
 import { db } from './db';
 import { rants, customLemmas } from './schema';
-import { desc, eq, and, gte, lte } from 'drizzle-orm';
+import { desc, eq, and, gte, lte, count } from 'drizzle-orm';
 import { RantEntry, ExtractedSymptom, DateRangeFilter, ResolvedDateRange, CustomLemmaEntry } from '../types';
 
 /**
@@ -183,7 +183,7 @@ export async function getRecentRantEntries(days: number = 7): Promise<RantEntry[
     const results = await db!
       .select()
       .from(rants)
-      .where(eq(rants.timestamp, cutoffTime))
+      .where(and(eq(rants.isDraft, false), gte(rants.timestamp, cutoffTime)))
       .orderBy(desc(rants.timestamp));
 
     return results.map((row) => ({
@@ -207,8 +207,8 @@ export async function getRantEntryCount(): Promise<number> {
   }
 
   try {
-    const results = await db!.select().from(rants);
-    return results.length;
+    const results = await db!.select({ count: count() }).from(rants);
+    return results[0].count;
   } catch (error) {
     console.error('Failed to count rant entries:', error);
     return 0;

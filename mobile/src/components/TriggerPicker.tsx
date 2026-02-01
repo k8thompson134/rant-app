@@ -18,8 +18,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityTrigger } from '../types';
 import { useTheme, useTypography, useTouchTargetSize, useAccessibilitySettings } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { typography as baseTypography } from '../theme/typography';
-
 interface TriggerPickerProps {
   visible: boolean;
   symptomName: string;
@@ -332,13 +330,13 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       maxHeight: '90%',
     },
     title: {
-      ...baseTypography.largeHeader,
+      ...typography.largeHeader,
       color: colors.textPrimary,
       textAlign: 'center',
       marginBottom: 4,
     },
     subtitle: {
-      ...baseTypography.body,
+      ...typography.body,
       color: colors.textSecondary,
       textAlign: 'center',
       marginBottom: 16,
@@ -347,7 +345,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       maxHeight: 380,
     },
     sectionLabel: {
-      ...baseTypography.caption,
+      ...typography.caption,
       fontFamily: 'DMSans_500Medium',
       color: colors.textSecondary,
       textTransform: 'uppercase',
@@ -374,7 +372,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       borderColor: colors.accentPrimary,
     },
     timeframeText: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textPrimary,
     },
     timeframeTextActive: {
@@ -405,7 +403,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       borderColor: colors.accentPrimary,
     },
     activityText: {
-      ...baseTypography.caption,
+      ...typography.caption,
       color: colors.textPrimary,
       textAlign: 'center',
     },
@@ -429,7 +427,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       borderColor: colors.accentPrimary,
     },
     customButtonText: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textSecondary,
     },
     customButtonTextActive: {
@@ -443,7 +441,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       borderRadius: 12,
       padding: 14,
       minHeight: 48,
-      ...baseTypography.body,
+      ...typography.body,
       color: colors.textPrimary,
       borderWidth: 2,
       borderColor: colors.accentPrimary,
@@ -459,7 +457,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       marginBottom: 8,
     },
     previewText: {
-      ...baseTypography.bodyMedium,
+      ...typography.bodyMedium,
       color: colors.accentPrimary,
     },
     applyButton: {
@@ -476,7 +474,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       opacity: 0.5,
     },
     applyButtonText: {
-      ...baseTypography.bodyMedium,
+      ...typography.bodyMedium,
       color: colors.bgPrimary,
     },
     clearButton: {
@@ -490,7 +488,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       gap: 8,
     },
     clearButtonText: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textSecondary,
     },
     cancelButton: {
@@ -499,7 +497,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       alignItems: 'center',
     },
     cancelButtonText: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textMuted,
     },
   });

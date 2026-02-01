@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { SpoonCount } from '../types';
+import { SpoonCount, withOpacity } from '../types';
 import { useTypography, useTouchTargetSize, useTheme } from '../contexts/AccessibilityContext';
 import { typography as baseTypography } from '../theme/typography';
 
@@ -39,13 +39,13 @@ function getEnergyColor(energyLevel: number, theme: any): string {
 function getEnergyBackgroundColor(energyLevel: number, theme: any): string {
   if (energyLevel <= 2) {
     // Rough: subtle red tint
-    return theme.severityRough + '1A'; // 10% opacity
+    return withOpacity(theme.severityRough, 0.1);
   } else if (energyLevel <= 5) {
     // Moderate: subtle amber tint
-    return theme.severityModerate + '1A'; // 10% opacity
+    return withOpacity(theme.severityModerate, 0.1);
   } else {
     // Good: subtle green tint
-    return theme.severityGood + '1A'; // 10% opacity
+    return withOpacity(theme.severityGood, 0.1);
   }
 }
 

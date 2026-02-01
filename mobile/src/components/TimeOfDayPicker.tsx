@@ -10,8 +10,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { TimeOfDay } from '../types';
 import { useTheme, useTypography, useTouchTargetSize, useAccessibilitySettings } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { typography as baseTypography } from '../theme/typography';
-
 interface TimeOfDayPickerProps {
   visible: boolean;
   symptomName: string;
@@ -193,13 +191,13 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       maxHeight: '85%',
     },
     title: {
-      ...baseTypography.largeHeader,
+      ...typography.largeHeader,
       color: colors.textPrimary,
       textAlign: 'center',
       marginBottom: 4,
     },
     subtitle: {
-      ...baseTypography.body,
+      ...typography.body,
       color: colors.textSecondary,
       textAlign: 'center',
       marginBottom: 20,
@@ -230,14 +228,14 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       flex: 1,
     },
     optionLabel: {
-      ...baseTypography.bodyMedium,
+      ...typography.bodyMedium,
       color: colors.textPrimary,
     },
     optionLabelActive: {
       color: colors.accentPrimary,
     },
     optionDescription: {
-      ...baseTypography.caption,
+      ...typography.caption,
       color: colors.textMuted,
       marginTop: 2,
     },
@@ -252,7 +250,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       gap: 8,
     },
     clearButtonText: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textSecondary,
     },
     cancelButton: {
@@ -261,7 +259,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       alignItems: 'center',
     },
     cancelButtonText: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textMuted,
     },
   });

@@ -165,7 +165,7 @@ function Capsule({ intensity, color, colors }: CapsuleProps) {
   );
 }
 
-function createStyles(colors: any, typography: any) {
+function createStyles(colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) {
   return StyleSheet.create({
     container: {
       paddingVertical: 8,

@@ -6,7 +6,7 @@
 
 import { Paths, File, Directory } from 'expo-file-system';
 import { RantEntry } from '../types';
-import { ExportFormat, DateRange, ExportResult } from '../types/export';
+import { ExportFormat, ExportExportDateRange, ExportResult } from '../types';
 
 /**
  * Format date for human readability
@@ -33,9 +33,9 @@ function formatDateForFilename(timestamp: number): string {
 /**
  * Filter entries by date range
  */
-export function filterEntriesByDateRange(
+export function filterEntriesByExportDateRange(
   entries: RantEntry[],
-  range?: DateRange
+  range?: ExportDateRange
 ): RantEntry[] {
   if (!range) return entries;
 
@@ -266,7 +266,7 @@ export async function exportAndShare(
 /**
  * Get date range based on preset
  */
-export function getDateRangeFromPreset(preset: string): DateRange | undefined {
+export function getExportDateRangeFromPreset(preset: string): ExportDateRange | undefined {
   const now = Date.now();
 
   switch (preset) {

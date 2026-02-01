@@ -21,6 +21,19 @@ import {
 } from './dateUtils';
 
 /**
+ * Safely parse a symptoms JSON string, returning an empty array on failure.
+ */
+function safeParseSymptoms(symptoms: string | ExtractedSymptom[]): ExtractedSymptom[] {
+  if (typeof symptoms !== 'string') return symptoms;
+  try {
+    return JSON.parse(symptoms);
+  } catch {
+    console.warn('Failed to parse symptoms JSON, skipping entry');
+    return [];
+  }
+}
+
+/**
  * Filter entries by date range
  */
 export function filterEntriesByDateRange(
@@ -44,11 +57,7 @@ function extractAllSymptoms(entries: RantEntry[]): ExtractedSymptom[] {
 
   entries.forEach((entry) => {
     if (entry.symptoms) {
-      const parsed =
-        typeof entry.symptoms === 'string'
-          ? JSON.parse(entry.symptoms)
-          : entry.symptoms;
-      allSymptoms.push(...parsed);
+      allSymptoms.push(...safeParseSymptoms(entry.symptoms));
     }
   });
 
@@ -96,11 +105,7 @@ function calculateAverage(values: number[]): number {
 function getEntrySeverity(entry: RantEntry): number {
   if (!entry.symptoms) return 5;
 
-  const parsed =
-    typeof entry.symptoms === 'string'
-      ? JSON.parse(entry.symptoms)
-      : entry.symptoms;
-
+  const parsed = safeParseSymptoms(entry.symptoms);
   if (parsed.length === 0) return 5;
 
   const severities = parsed.map((s: ExtractedSymptom) =>
@@ -117,7 +122,8 @@ export function groupEntriesByDay(entries: RantEntry[]): DailyAggregate[] {
 
   entries.forEach((entry) => {
     const date = new Date(entry.timestamp);
-    const dateKey = startOfDay(date).toISOString();
+    // Use local date components to avoid UTC conversion splitting same-day entries
+    const dateKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 
     if (!grouped.has(dateKey)) {
       grouped.set(dateKey, []);
@@ -128,7 +134,8 @@ export function groupEntriesByDay(entries: RantEntry[]): DailyAggregate[] {
   const aggregates: DailyAggregate[] = [];
 
   grouped.forEach((dayEntries, dateKey) => {
-    const date = new Date(dateKey);
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     const severities = dayEntries.map(getEntrySeverity);
     const maxSeverity = Math.max(...severities);
     const avgSeverity = calculateAverage(severities);
@@ -136,11 +143,7 @@ export function groupEntriesByDay(entries: RantEntry[]): DailyAggregate[] {
     const allSymptoms = new Set<string>();
     dayEntries.forEach((entry) => {
       if (entry.symptoms) {
-        const parsed =
-          typeof entry.symptoms === 'string'
-            ? JSON.parse(entry.symptoms)
-            : entry.symptoms;
-        parsed.forEach((s: ExtractedSymptom) => allSymptoms.add(s.symptom));
+        safeParseSymptoms(entry.symptoms).forEach((s) => allSymptoms.add(s.symptom));
       }
     });
 
@@ -166,12 +169,7 @@ export function calculateSymptomFrequency(
 
   entries.forEach((entry) => {
     if (entry.symptoms) {
-      const parsed =
-        typeof entry.symptoms === 'string'
-          ? JSON.parse(entry.symptoms)
-          : entry.symptoms;
-
-      parsed.forEach((symptom: ExtractedSymptom) => {
+      safeParseSymptoms(entry.symptoms).forEach((symptom) => {
         const name = symptom.symptom;
         const existing = symptomCounts.get(name) || { count: 0, severities: [] };
         existing.count += 1;
@@ -221,12 +219,7 @@ export function getWeeklyCapsuleData(
 
       dayData.entries.forEach((entry) => {
         if (entry.symptoms) {
-          const parsed =
-            typeof entry.symptoms === 'string'
-              ? JSON.parse(entry.symptoms)
-              : entry.symptoms;
-
-          parsed.forEach((s: ExtractedSymptom) => {
+          safeParseSymptoms(entry.symptoms).forEach((s) => {
             if (s.symptom === symptomFreq.symptom) {
               const severity = severityToNumber(s.severity);
               maxSeverityForSymptom = Math.max(maxSeverityForSymptom, severity);
@@ -300,12 +293,7 @@ export function getMonthSummary(
   const triggers = new Map<string, number>();
   monthEntries.forEach((entry) => {
     if (entry.symptoms) {
-      const parsed =
-        typeof entry.symptoms === 'string'
-          ? JSON.parse(entry.symptoms)
-          : entry.symptoms;
-
-      parsed.forEach((symptom: ExtractedSymptom) => {
+      safeParseSymptoms(entry.symptoms).forEach((symptom) => {
         if (symptom.trigger?.activity) {
           const activity = symptom.trigger.activity;
           triggers.set(activity, (triggers.get(activity) || 0) + 1);

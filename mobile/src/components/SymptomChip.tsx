@@ -16,6 +16,7 @@ import {
   formatActivityTrigger,
   formatSymptomDuration,
   formatTimeOfDay,
+  withOpacity,
 } from '../types';
 import { useTypography, useTouchTargetSize, useTheme } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
@@ -140,7 +141,7 @@ export function SymptomChip({
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: chipColor + '33',
+                  backgroundColor: withOpacity(chipColor, 0.2),
                   minWidth: touchTargetSize,
                   minHeight: touchTargetSize,
                 }
@@ -158,7 +159,7 @@ export function SymptomChip({
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: chipColor + '33',
+                  backgroundColor: withOpacity(chipColor, 0.2),
                   minWidth: touchTargetSize,
                   minHeight: touchTargetSize,
                 }

@@ -115,13 +115,12 @@ describe('Segment By Date - Past Dates Only', () => {
 
 describe('Validate and Fix Dates', () => {
   test('should fix future dates to past', () => {
-    const refDate = createReferenceDate(); // Monday, Jan 6
-
-    // Manually create a segment with a future date (this shouldn't happen, but test the safety net)
-    const futureDate = new Date(2025, 0, 10); // Friday, Jan 10 (future)
+    // Use a date that is always in the future relative to Date.now()
+    const now = new Date();
+    const futureDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 4);
     const segments = [{
       timestamp: futureDate.getTime(),
-      dateString: 'Friday, January 10',
+      dateString: 'future date',
       text: 'I had symptoms',
       startIndex: 0,
       endIndex: 16,
@@ -130,17 +129,20 @@ describe('Validate and Fix Dates', () => {
 
     const fixed = validateAndFixDates(segments);
 
-    // Should be moved to the past
-    expect(fixed[0].timestamp).toBeLessThan(refDate.getTime());
+    // validateAndFixDates compares against start of today, so result should be in the past
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    expect(fixed[0].timestamp).toBeLessThanOrEqual(todayStart);
   });
 
   test('should not modify past dates', () => {
-    const refDate = createReferenceDate(); // Monday, Jan 6
-    const pastDate = new Date(2025, 0, 3); // Friday, Jan 3 (past)
+    // Use a date that is always in the past relative to Date.now()
+    const now = new Date();
+    const pastDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+    pastDate.setHours(0, 0, 0, 0);
 
     const segments = [{
       timestamp: pastDate.getTime(),
-      dateString: 'Friday, January 3',
+      dateString: 'past date',
       text: 'I had symptoms',
       startIndex: 0,
       endIndex: 16,

@@ -98,7 +98,7 @@ export function StatsRow({ stats }: StatsRowProps) {
   );
 }
 
-function createStyles(colors: any, typography: any) {
+function createStyles(colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) {
   // Calculate responsive sizing based on font scale
   const baseUnit = typography?.body?.fontSize || 15;
   const spacing = {

@@ -202,7 +202,7 @@ export function SymptomDetailModal({
   );
 }
 
-const createStyles = (colors: any, typography: any, touchTargetSize: number) =>
+const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>, touchTargetSize: number) =>
   StyleSheet.create({
     container: {
       flex: 1,

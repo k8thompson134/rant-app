@@ -16,6 +16,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { getAllRantEntries, deleteRantEntry } from '../database/operations';
 import {
@@ -27,6 +28,7 @@ import {
   formatActivityTrigger,
   formatSymptomDuration,
   formatTimeOfDay,
+  withOpacity,
 } from '../types';
 import { updateRantEntry } from '../database/operations';
 import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
@@ -47,6 +49,7 @@ export function MonthScreen({ navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -137,7 +140,7 @@ export function MonthScreen({ navigation }: Props) {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const dayStart = new Date(year, month, day).getTime();
-    const dayEnd = dayStart + 86400000;
+    const dayEnd = new Date(year, month, day + 1).getTime();
 
     const dayEntries = allEntries.filter(entry =>
       entry.timestamp >= dayStart && entry.timestamp < dayEnd
@@ -239,7 +242,7 @@ export function MonthScreen({ navigation }: Props) {
 
       // Calculate severity from entries for this day
       const dayStart = new Date(year, month, day).getTime();
-      const dayEnd = dayStart + 86400000;
+      const dayEnd = new Date(year, month, day + 1).getTime();
       const dayEntries = entries.filter(entry =>
         entry.timestamp >= dayStart && entry.timestamp < dayEnd
       );
@@ -395,7 +398,7 @@ export function MonthScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* View Mode Toggle */}
       <View style={styles.viewToggleContainer}>
         <TouchableOpacity
@@ -477,6 +480,9 @@ export function MonthScreen({ navigation }: Props) {
                       dayData.isToday && styles.dayCircleToday,
                       selectedDay === dayData.day && styles.dayCircleSelected
                     ]}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${currentDate.toLocaleDateString('en-US', { month: 'long' })} ${dayData.day}${dayData.isToday ? ', today' : ''}${dayData.severity ? `, ${dayData.severity} day` : ''}${selectedDay === dayData.day ? ', selected' : ''}`}
                   >
                     <Text style={[
                       styles.dayNumber,
@@ -667,7 +673,6 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,
-    paddingTop: 50,
   },
   scrollView: {
     flex: 1,
@@ -862,7 +867,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     marginTop: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.accentPrimary + '40',
+    borderColor: withOpacity(colors.accentPrimary, 0.25),
     borderStyle: 'dashed',
   },
   addSymptomText: {

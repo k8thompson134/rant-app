@@ -3,7 +3,7 @@
  * Shows patterns, trends, and top symptoms for the selected period
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useTypography } from '../contexts/AccessibilityContext';
 import { getAllRantEntries } from '../database/operations';
@@ -43,6 +44,13 @@ export default function InsightsScreen() {
   useEffect(() => {
     loadEntries();
   }, []);
+
+  // Reload entries when screen is focused (e.g. after adding an entry on another tab)
+  useFocusEffect(
+    useCallback(() => {
+      loadEntries();
+    }, [])
+  );
 
   const loadEntries = async () => {
     try {
@@ -218,7 +226,7 @@ function EmptyState() {
   );
 }
 
-function createStyles(colors: any, typography: any) {
+function createStyles(colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) {
   // Calculate responsive spacing based on font scale
   const baseUnit = typography?.body?.fontSize || 15;
   const spacing = {
@@ -231,7 +239,6 @@ function createStyles(colors: any, typography: any) {
 
   return StyleSheet.create({
     container: {
-      paddingTop: 40,
       flex: 1,
       backgroundColor: colors.bgPrimary,
     },

@@ -4,7 +4,7 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { text, integer, sqliteTable } from 'drizzle-orm/sqlite-core';
+import { text, integer, sqliteTable, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * Rant entries table
@@ -19,8 +19,11 @@ export const rants = sqliteTable('rants', {
   isDraft: integer('is_draft', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at')
     .notNull()
-    .default(sql`(unixepoch())`),
-});
+    .default(sql`(unixepoch() * 1000)`),
+}, (table) => ({
+  timestampIdx: index('rants_timestamp_idx').on(table.timestamp),
+  isDraftIdx: index('rants_is_draft_idx').on(table.isDraft),
+}));
 
 export type Rant = typeof rants.$inferSelect;
 export type NewRant = typeof rants.$inferInsert;
@@ -39,7 +42,7 @@ export const customLemmas = sqliteTable('custom_lemmas', {
   // When the custom word was added
   createdAt: integer('created_at')
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch() * 1000)`),
 });
 
 export type CustomLemma = typeof customLemmas.$inferSelect;

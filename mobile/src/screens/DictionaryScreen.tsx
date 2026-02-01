@@ -531,7 +531,7 @@ export function DictionaryScreen() {
   );
 }
 
-const createStyles = (typography: any, colors: any) => StyleSheet.create({
+const createStyles = (typography: ReturnType<typeof useTypography>, colors: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,

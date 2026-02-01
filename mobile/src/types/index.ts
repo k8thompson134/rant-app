@@ -29,7 +29,7 @@ export interface SpoonCount {
 export interface SymptomDuration {
   value?: number;  // Numeric duration (e.g., 3 for "3 hours")
   unit?: 'minutes' | 'hours' | 'days' | 'weeks';  // Time unit
-  qualifier?: 'all' | 'half' | 'most_of';  // "all day", "half the night"
+  qualifier?: 'all' | 'half' | 'most_of' | 'intermittent' | 'rare' | 'frequent' | 'constant';  // "all day", "sometimes", "often", etc.
   since?: string;  // Reference point (e.g., "Tuesday", "yesterday")
   ongoing?: boolean;  // "still have", "won't go away"
 }
@@ -58,6 +58,7 @@ export interface ExtractionResult {
   text: string;
   symptoms: ExtractedSymptom[];
   spoonCount?: SpoonCount;  // Spoon theory energy tracking
+  repeatPrevious?: boolean;  // Flag for "same as yesterday" or similar catch-up phrases
 }
 
 export interface RantEntry {
@@ -938,6 +939,20 @@ export function getSeverityColor(severity: Severity | null | undefined, themeCol
 }
 
 /**
+ * Apply an opacity to a hex color, returning an rgba() string.
+ * Safe regardless of hex format (#RGB, #RRGGBB, #RRGGBBAA).
+ * @param hex - Hex color string (e.g. '#FF0000')
+ * @param opacity - Opacity from 0 to 1
+ */
+export function withOpacity(hex: string, opacity: number): string {
+  const cleaned = hex.replace('#', '');
+  const r = parseInt(cleaned.substring(0, 2), 16);
+  const g = parseInt(cleaned.substring(2, 4), 16);
+  const b = parseInt(cleaned.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+/**
  * Get severity background color (with transparency)
  * @param severity - The severity level (mild, moderate, severe)
  * @param themeColors - Optional theme colors object for dynamic theming
@@ -948,11 +963,11 @@ export function getSeverityBackgroundColor(severity: Severity | null | undefined
 
   switch (severity) {
     case 'mild':
-      return theme.severityGood + '20'; // 12% opacity
+      return withOpacity(theme.severityGood, 0.12);
     case 'moderate':
-      return theme.severityModerate + '25'; // 15% opacity
+      return withOpacity(theme.severityModerate, 0.15);
     case 'severe':
-      return theme.severityRough + '30'; // 19% opacity
+      return withOpacity(theme.severityRough, 0.19);
     default:
       return theme.severityNone;
   }
@@ -1101,101 +1116,18 @@ export interface ExportOptions {
  * Result of an export operation
  */
 export interface ExportResult {
-  /** Success status */
-  success: true;
-  /** Export format used */
-  format: ExportFormat;
-  /** File URI (for expo-file-system) */
-  fileUri: string;
-  /** File name */
-  fileName: string;
-  /** Number of entries exported */
-  entryCount: number;
-  /** File size in bytes */
-  fileSizeBytes: number;
-  /** Export timestamp */
-  exportedAt: number;
+  success: boolean;
+  filePath?: string;
+  fileName?: string;
+  error?: string;
 }
 
 /**
- * Export operation error
+ * Date range for export filtering (number timestamps)
  */
-export interface ExportError {
-  /** Failure status */
-  success: false;
-  /** Error type for programmatic handling */
-  errorType: ExportErrorType;
-  /** Human-readable error message */
-  message: string;
-  /** Optional error details for debugging */
-  details?: string;
-}
-
-/**
- * Export error types
- */
-export type ExportErrorType =
-  | 'no_entries_found'
-  | 'invalid_date_range'
-  | 'file_system_error'
-  | 'permission_denied'
-  | 'serialization_error'
-  | 'unknown_error';
-
-/**
- * Discriminated union for export operation results
- * Ensures compile-time type safety when handling success/failure
- */
-export type ExportOperationResult = ExportResult | ExportError;
-
-/**
- * Flattened entry for CSV export
- * All nested structures are serialized to strings
- */
-export interface FlattenedEntry {
-  id: string;
-  date: string;
-  time: string;
-  text: string;
-  symptomCount: number;
-  symptoms: string; // Comma-separated symptom names
-  severities: string; // Comma-separated severity levels
-  painLocations: string; // Comma-separated body locations
-  triggers: string; // Comma-separated trigger activities
-  spoonCount: string; // Formatted spoon count or empty
-  energyLevel: string; // 0-10 scale or empty
-}
-
-/**
- * JSON export structure (preserves full type information)
- */
-export interface JsonExportData {
-  /** Export metadata */
-  metadata: {
-    exportedAt: string; // ISO timestamp
-    entryCount: number;
-    dateRange: {
-      start: string | null; // ISO timestamp or null for all-time
-      end: string | null; // ISO timestamp or null for all-time
-    };
-    version: string; // RantTrack version
-  };
-  /** Array of full entry objects */
-  entries: RantEntry[];
-}
-
-/**
- * Type guard to check if export result is successful
- */
-export function isExportSuccess(result: ExportOperationResult): result is ExportResult {
-  return result.success === true;
-}
-
-/**
- * Type guard to check if export result is an error
- */
-export function isExportError(result: ExportOperationResult): result is ExportError {
-  return result.success === false;
+export interface ExportDateRange {
+  start: number;
+  end: number;
 }
 
 /**

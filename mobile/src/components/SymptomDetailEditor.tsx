@@ -26,10 +26,10 @@ import {
   formatActivityTrigger,
   formatSymptomDuration,
   formatTimeOfDay,
+  withOpacity,
 } from '../types';
 import { useTheme, useTypography, useTouchTargetSize, useAccessibilitySettings } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
-import { typography as baseTypography } from '../theme/typography';
 import { SeverityPicker } from './SeverityPicker';
 import { TimeOfDayPicker } from './TimeOfDayPicker';
 import { DurationPicker } from './DurationPicker';
@@ -141,7 +141,7 @@ export function SymptomDetailEditor({
                         styles.fieldIcon,
                         {
                           backgroundColor: symptom.severity
-                            ? SEVERITY_COLORS[symptom.severity] + '33'
+                            ? withOpacity(SEVERITY_COLORS[symptom.severity], 0.2)
                             : colors.bgElevated,
                         },
                       ]}
@@ -359,13 +359,13 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       maxHeight: '80%',
     },
     title: {
-      ...baseTypography.largeHeader,
+      ...typography.largeHeader,
       color: colors.textPrimary,
       textAlign: 'center',
       marginBottom: 4,
     },
     symptomName: {
-      ...baseTypography.body,
+      ...typography.body,
       color: colors.accentPrimary,
       textAlign: 'center',
       marginBottom: 20,
@@ -399,11 +399,11 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       alignItems: 'center',
     },
     fieldLabel: {
-      ...baseTypography.bodyMedium,
+      ...typography.bodyMedium,
       color: colors.textPrimary,
     },
     fieldValue: {
-      ...baseTypography.small,
+      ...typography.small,
       color: colors.textSecondary,
       marginLeft: 42,
       textTransform: 'capitalize',
@@ -423,7 +423,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       marginTop: 8,
     },
     doneButtonText: {
-      ...baseTypography.bodyMedium,
+      ...typography.bodyMedium,
       color: colors.bgPrimary,
     },
   });

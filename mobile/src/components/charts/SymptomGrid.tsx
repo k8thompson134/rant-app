@@ -190,7 +190,7 @@ function getSymptomIcon(symptom: string): keyof typeof Ionicons.glyphMap {
   return 'ellipse-outline';
 }
 
-function createStyles(colors: any, typography: any) {
+function createStyles(colors: ReturnType<typeof useTheme>, typography: ReturnType<typeof useTypography>) {
   // Calculate responsive sizing based on font scale
   const baseUnit = typography?.body?.fontSize || 15;
   const iconSize = Math.round(baseUnit * 3.2);  // ~48
