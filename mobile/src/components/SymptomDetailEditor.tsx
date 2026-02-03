@@ -5,7 +5,7 @@
  * WCAG AAA compliant with clear navigation for brain fog users
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -58,6 +58,13 @@ export function SymptomDetailEditor({
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
   const [editingField, setEditingField] = useState<EditingField>(null);
+
+  // Reset editing state when modal opens for a new symptom
+  useEffect(() => {
+    if (visible) {
+      setEditingField(null);
+    }
+  }, [visible, symptom]);
 
   const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
 

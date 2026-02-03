@@ -199,6 +199,45 @@ export async function getRecentRantEntries(days: number = 7): Promise<RantEntry[
 }
 
 /**
+ * Get rant entries for a specific calendar month
+ * Filters at the DB level so only the relevant month is loaded.
+ * @param year - Full year (e.g. 2026)
+ * @param month - Zero-based month index (0 = January)
+ */
+export async function getEntriesForMonth(year: number, month: number): Promise<RantEntry[]> {
+  if (!isDatabaseAvailable()) {
+    return [];
+  }
+
+  try {
+    const startTimestamp = new Date(year, month, 1).getTime();
+    const endTimestamp = new Date(year, month + 1, 1).getTime();
+
+    const results = await db!
+      .select()
+      .from(rants)
+      .where(
+        and(
+          eq(rants.isDraft, false),
+          gte(rants.timestamp, startTimestamp),
+          lte(rants.timestamp, endTimestamp - 1)
+        )
+      )
+      .orderBy(desc(rants.timestamp));
+
+    return results.map((row) => ({
+      id: row.id,
+      text: row.text,
+      timestamp: row.timestamp,
+      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+    }));
+  } catch (error) {
+    console.error('Failed to get entries for month:', error);
+    throw error;
+  }
+}
+
+/**
  * Count total rant entries
  */
 export async function getRantEntryCount(): Promise<number> {

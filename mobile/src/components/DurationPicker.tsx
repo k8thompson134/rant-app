@@ -4,7 +4,7 @@
  * WCAG AAA compliant with clear options for brain fog users
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -96,6 +96,15 @@ export function DurationPicker({
   const [selectedUnit, setSelectedUnit] = useState<SymptomDuration['unit']>(
     currentDuration?.unit || 'hours'
   );
+
+  // Reset local state when modal opens to reflect current prop values
+  useEffect(() => {
+    if (visible) {
+      setMode('quick');
+      setSelectedValue(currentDuration?.value || 1);
+      setSelectedUnit(currentDuration?.unit || 'hours');
+    }
+  }, [visible, currentDuration]);
 
   const handleQuickSelect = (duration: SymptomDuration) => {
     onSelect(duration);

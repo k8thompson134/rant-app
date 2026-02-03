@@ -2,7 +2,7 @@
  * MonthScreen - Calendar month view with daily entries
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,21 +18,17 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
-import { getAllRantEntries, deleteRantEntry } from '../database/operations';
+import { getEntriesForMonth, deleteRantEntry } from '../database/operations';
 import {
   RantEntry,
   EditableSymptom,
-  SYMPTOM_DISPLAY_NAMES,
   getSeverityColor,
-  getSeverityBackgroundColor,
-  formatActivityTrigger,
-  formatSymptomDuration,
-  formatTimeOfDay,
   withOpacity,
 } from '../types';
 import { updateRantEntry } from '../database/operations';
 import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
 import { AddSymptomModal } from '../components/AddSymptomModal';
+import { SymptomListItem } from '../components/SymptomListItem';
 import type { MonthStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<MonthStackParamList, 'MonthView'>;
@@ -63,11 +59,8 @@ export function MonthScreen({ navigation }: Props) {
   const [editingSymptomId, setEditingSymptomId] = useState<string | null>(null);
   const [showAddSymptomModal, setShowAddSymptomModal] = useState(false);
 
-  useEffect(() => {
-    loadEntries();
-  }, [currentDate]);
-
-  // Reload entries when screen is focused
+  // Load entries on focus (covers both initial mount and returning to screen).
+  // Depends on currentDate so month changes also trigger a reload.
   useFocusEffect(
     useCallback(() => {
       loadEntries();
@@ -76,7 +69,10 @@ export function MonthScreen({ navigation }: Props) {
 
   const loadEntries = async () => {
     try {
-      const allEntries = await getAllRantEntries();
+      const allEntries = await getEntriesForMonth(
+        currentDate.getFullYear(),
+        currentDate.getMonth()
+      );
       setEntries(allEntries);
 
       // Filter entries for selected day
@@ -323,7 +319,7 @@ export function MonthScreen({ navigation }: Props) {
     }
   };
 
-  const calendarDays = getCalendarDays();
+  const calendarDays = useMemo(() => getCalendarDays(), [currentDate, entries]);
 
   // Render list view item
   const renderListItem = ({ item }: { item: RantEntry }) => {
@@ -356,41 +352,12 @@ export function MonthScreen({ navigation }: Props) {
 
         {item.symptoms.length > 0 && (
           <View style={styles.symptomsList}>
-            {item.symptoms.map((symptom, index) => {
-              const symptomSeverityColor = getSeverityColor(symptom.severity, colors);
-              const symptomBgColor = getSeverityBackgroundColor(symptom.severity, colors);
-              const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
-              const contextParts: string[] = [];
-              if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
-              if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
-              if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
-              const contextText = contextParts.join(' · ');
-              const painLocation = symptom.painDetails?.location;
-
-              return (
-                <View
-                  key={`${item.id}-${index}`}
-                  style={[styles.symptomItem, { backgroundColor: symptomBgColor }]}
-                >
-                  <View style={styles.symptomMainRow}>
-                    <Text style={[styles.symptomName, { color: symptomSeverityColor }]}>
-                      {displayName}
-                      {painLocation && (
-                        <Text style={styles.symptomLocation}> ({painLocation})</Text>
-                      )}
-                    </Text>
-                    {symptom.severity && (
-                      <Text style={[styles.symptomSeverityBadge, { color: symptomSeverityColor }]}>
-                        {symptom.severity}
-                      </Text>
-                    )}
-                  </View>
-                  {contextText.length > 0 && (
-                    <Text style={styles.symptomContext}>{contextText}</Text>
-                  )}
-                </View>
-              );
-            })}
+            {item.symptoms.map((symptom, index) => (
+              <SymptomListItem
+                key={`${item.id}-${index}`}
+                symptom={symptom}
+              />
+            ))}
           </View>
         )}
       </View>
@@ -551,53 +518,13 @@ export function MonthScreen({ navigation }: Props) {
                   </Text>
                   {entry.symptoms.length > 0 ? (
                     <View style={styles.symptomsList}>
-                      {entry.symptoms.map((symptom, index) => {
-                        const symptomSeverityColor = getSeverityColor(symptom.severity, colors);
-                        const symptomBgColor = getSeverityBackgroundColor(symptom.severity, colors);
-                        const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
-
-                        // Build context parts
-                        const contextParts: string[] = [];
-                        if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
-                        if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
-                        if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
-                        const contextText = contextParts.join(' · ');
-
-                        // Pain location
-                        const painLocation = symptom.painDetails?.location;
-
-                        return (
-                          <TouchableOpacity
-                            key={`${entry.id}-${index}`}
-                            style={[
-                              styles.symptomItem,
-                              { backgroundColor: symptomBgColor }
-                            ]}
-                            onPress={() => handleSymptomPress(entry, symptom.id!)}
-                            accessible={true}
-                            accessibilityLabel={`Edit ${displayName}${painLocation ? ` in ${painLocation}` : ''}`}
-                            accessibilityRole="button"
-                            accessibilityHint="Tap to edit symptom details"
-                          >
-                            <View style={styles.symptomMainRow}>
-                              <Text style={[styles.symptomName, { color: symptomSeverityColor }]}>
-                                {displayName}
-                                {painLocation && (
-                                  <Text style={styles.symptomLocation}> ({painLocation})</Text>
-                                )}
-                              </Text>
-                              {symptom.severity && (
-                                <Text style={[styles.symptomSeverityBadge, { color: symptomSeverityColor }]}>
-                                  {symptom.severity}
-                                </Text>
-                              )}
-                            </View>
-                            {contextText.length > 0 && (
-                              <Text style={styles.symptomContext}>{contextText}</Text>
-                            )}
-                          </TouchableOpacity>
-                        );
-                      })}
+                      {entry.symptoms.map((symptom, index) => (
+                        <SymptomListItem
+                          key={`${entry.id}-${index}`}
+                          symptom={symptom}
+                          onPress={() => handleSymptomPress(entry, symptom.id!)}
+                        />
+                      ))}
                     </View>
                   ) : null}
 
@@ -826,35 +753,6 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   },
   symptomsList: {
     gap: 8,
-    marginTop: 4,
-  },
-  symptomItem: {
-    borderRadius: 10,
-    padding: 10,
-  },
-  symptomMainRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  symptomName: {
-    ...typography.small,
-    fontFamily: 'DMSans_500Medium',
-    flex: 1,
-  },
-  symptomLocation: {
-    ...typography.small,
-    fontStyle: 'italic',
-  },
-  symptomSeverityBadge: {
-    ...typography.caption,
-    fontFamily: 'DMSans_500Medium',
-    textTransform: 'capitalize',
-    marginLeft: 8,
-  },
-  symptomContext: {
-    ...typography.caption,
-    color: colors.textMuted,
     marginTop: 4,
   },
   addSymptomButton: {

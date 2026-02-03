@@ -3,7 +3,7 @@
  * Shows patterns, trends, and top symptoms for the selected period
  */
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -40,12 +40,7 @@ export default function InsightsScreen() {
 
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
-  // Load entries on mount
-  useEffect(() => {
-    loadEntries();
-  }, []);
-
-  // Reload entries when screen is focused (e.g. after adding an entry on another tab)
+  // Load entries on focus (covers both initial mount and returning to screen)
   useFocusEffect(
     useCallback(() => {
       loadEntries();

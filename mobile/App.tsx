@@ -39,6 +39,7 @@ import type { HomeStackParamList, MonthStackParamList, SettingsStackParamList, R
 import { darkTheme } from './src/theme/colors';
 import { AccessibilityProvider, useTheme } from './src/contexts/AccessibilityContext';
 import { CustomLemmasProvider } from './src/contexts/CustomLemmasContext';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 // Use darkTheme directly to avoid bundling issues
 const colors = darkTheme;
@@ -92,11 +93,13 @@ export default function App() {
   }
 
   return (
-    <AccessibilityProvider>
-      <CustomLemmasProvider>
-        <ThemedApp />
-      </CustomLemmasProvider>
-    </AccessibilityProvider>
+    <ErrorBoundary>
+      <AccessibilityProvider>
+        <CustomLemmasProvider>
+          <ThemedApp />
+        </CustomLemmasProvider>
+      </AccessibilityProvider>
+    </ErrorBoundary>
   );
 }
 

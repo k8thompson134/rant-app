@@ -9,7 +9,7 @@
  * - Add new days with date picker
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -28,17 +28,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   EditableSymptom,
   SpoonCount,
-  SYMPTOM_DISPLAY_NAMES,
-  getSeverityColor,
-  getSeverityBackgroundColor,
-  formatActivityTrigger,
-  formatSymptomDuration,
-  formatTimeOfDay,
 } from '../types';
 import type { HomeStackParamList, DayEntry } from '../types/navigation';
 import { AddSymptomModal } from '../components/AddSymptomModal';
 import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
 import { SpoonCountDisplay } from '../components/SpoonCountDisplay';
+import { SymptomListItem } from '../components/SymptomListItem';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 
 type CatchUpReviewScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'CatchUpReview'>;
@@ -60,8 +55,11 @@ export default function CatchUpReviewScreen() {
   // Memoize styles with theme tokens
   const styles = useMemo(() => createStyles(colors, typography, touchTargetSize), [colors, typography, touchTargetSize]);
 
+  // Monotonic counter for unique day IDs (survives delete + re-add cycles)
+  const nextDayId = useRef(initialEntries.length);
+
   // Add unique IDs to each day
-  const [days, setDays] = useState<DayColumn[]>(
+  const [days, setDays] = useState<DayColumn[]>(() =>
     initialEntries.map((entry, index) => ({
       ...entry,
       id: `day-${index}`,
@@ -165,7 +163,7 @@ export default function CatchUpReviewScreen() {
   const handleDatePickerConfirm = () => {
     setShowDatePicker(false);
     const newDay: DayColumn = {
-      id: `day-${days.length}`,
+      id: `day-${nextDayId.current++}`,
       timestamp: pickedDate.getTime(),
       dateString: pickedDate.toLocaleDateString('en-US', {
         weekday: 'short',
@@ -303,64 +301,14 @@ export default function CatchUpReviewScreen() {
                     <Text style={styles.emptyText}>No symptoms yet</Text>
                   ) : (
                     <View style={styles.symptomsList}>
-                      {day.symptoms.map((symptom, symptomIndex) => {
-                        const symptomSeverityColor = getSeverityColor(symptom.severity, colors);
-                        const symptomBgColor = getSeverityBackgroundColor(symptom.severity, colors);
-                        const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
-
-                        // Build context parts
-                        const contextParts: string[] = [];
-                        if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
-                        if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
-                        if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
-                        const contextText = contextParts.join(' · ');
-
-                        // Pain location
-                        const painLocation = symptom.painDetails?.location;
-
-                        return (
-                          <TouchableOpacity
-                            key={`${day.id}-symptom-${symptomIndex}`}
-                            style={[styles.symptomChip, { backgroundColor: symptomBgColor }]}
-                            onPress={() => handleSymptomPress(day.id, symptom.id!)}
-                            accessible={true}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Edit ${displayName}${painLocation ? ` in ${painLocation}` : ''}`}
-                            accessibilityHint="Tap to edit symptom details"
-                          >
-                            <View style={styles.symptomContent}>
-                              <View style={styles.symptomMainRow}>
-                                <Text style={[styles.symptomText, { color: symptomSeverityColor }]}>
-                                  {displayName}
-                                  {painLocation && (
-                                    <Text style={styles.symptomLocation}> ({painLocation})</Text>
-                                  )}
-                                </Text>
-                                {symptom.severity && (
-                                  <Text style={[styles.symptomSeverityBadge, { color: symptomSeverityColor }]}>
-                                    {symptom.severity}
-                                  </Text>
-                                )}
-                              </View>
-                              {contextText.length > 0 && (
-                                <Text style={styles.symptomContext}>{contextText}</Text>
-                              )}
-                            </View>
-                            <TouchableOpacity
-                              style={styles.removeSymptomBtn}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                handleRemoveSymptom(day.id, symptomIndex);
-                              }}
-                              accessible={true}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Remove ${displayName}`}
-                            >
-                              <Ionicons name="close" size={18} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                          </TouchableOpacity>
-                        );
-                      })}
+                      {day.symptoms.map((symptom, symptomIndex) => (
+                        <SymptomListItem
+                          key={`${day.id}-symptom-${symptomIndex}`}
+                          symptom={symptom}
+                          onPress={() => handleSymptomPress(day.id, symptom.id!)}
+                          onRemove={() => handleRemoveSymptom(day.id, symptomIndex)}
+                        />
+                      ))}
                     </View>
                   )}
                 </View>
@@ -739,75 +687,6 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   },
   symptomsList: {
     gap: 8,
-  },
-  symptomChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bgPrimary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.bgSecondary,
-    marginBottom: 8,
-    minHeight: touchTargetSize,
-  },
-  symptomContent: {
-    flex: 1,
-  },
-  symptomMainRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  symptomText: {
-    flex: 1,
-    ...typography.body,
-    fontFamily: 'DMSans_500Medium',
-  },
-  symptomLocation: {
-    ...typography.small,
-    fontStyle: 'italic',
-  },
-  symptomSeverityBadge: {
-    ...typography.caption,
-    fontFamily: 'DMSans_500Medium',
-    textTransform: 'capitalize',
-    marginLeft: 8,
-  },
-  symptomContext: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  removeSymptomBtn: {
-    minWidth: touchTargetSize,
-    minHeight: touchTargetSize,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  severityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  'severity-mild': {
-    backgroundColor: colors.severityGood,
-  },
-  'severity-moderate': {
-    backgroundColor: colors.severityModerate,
-  },
-  'severity-severe': {
-    backgroundColor: colors.severityRough,
-  },
-  severityText: {
-    ...typography.caption,
-    color: colors.bgApp,
-    fontWeight: '700',
-    textTransform: 'uppercase',
   },
   spoonSection: {
     paddingHorizontal: 20,

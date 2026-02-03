@@ -4,7 +4,7 @@
  * WCAG AAA compliant with common activities for quick selection
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -76,6 +76,16 @@ export function TriggerPicker({
   );
   const [customActivity, setCustomActivity] = useState<string>('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+
+  // Reset local state when modal opens to reflect current prop values
+  useEffect(() => {
+    if (visible) {
+      setSelectedActivity(currentTrigger?.activity || '');
+      setSelectedTimeframe(currentTrigger?.timeframe || 'after');
+      setCustomActivity('');
+      setShowCustomInput(false);
+    }
+  }, [visible, currentTrigger]);
 
   const handleActivitySelect = (activity: string) => {
     setSelectedActivity(activity);
