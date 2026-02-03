@@ -160,10 +160,17 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
                 const painLocation = symptom.painDetails?.location;
                 const severityColor = getSeverityColor(symptom.severity, colors);
 
-                // Build context info (trigger, duration, timeOfDay)
+                // Build context info (trigger, duration, recovery, timeOfDay)
                 const contextParts: string[] = [];
                 if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
                 if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
+                // Add recovery time if available
+                if (symptom.duration?.recoveryTime) {
+                  const recoveryText = formatSymptomDuration(symptom.duration.recoveryTime);
+                  if (recoveryText) {
+                    contextParts.push(`recovers ${recoveryText}`);
+                  }
+                }
                 if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
                 const contextText = contextParts.join(' · ');
 
