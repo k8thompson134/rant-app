@@ -16,6 +16,7 @@ import {
   formatActivityTrigger,
   formatSymptomDuration,
   formatTimeOfDay,
+  formatProgression,
   withOpacity,
 } from '../types';
 import { useTypography, useTouchTargetSize, useTheme } from '../contexts/AccessibilityContext';
@@ -65,13 +66,24 @@ export function SymptomChip({
   const severityText = symptom.severity ? ` · ${symptom.severity}` : '';
   const painDetailsText = formatPainDetails(symptom.painDetails);
 
-  // Build secondary info parts (trigger, duration, timeOfDay)
+  // Build secondary info parts (trigger, progression, duration, recovery, timeOfDay)
   const secondaryParts: string[] = [];
   if (symptom.trigger) {
     secondaryParts.push(formatActivityTrigger(symptom.trigger));
   }
+  // Add progression indicator (visual indicator of how symptom is evolving)
+  if (symptom.duration?.progression) {
+    secondaryParts.push(formatProgression(symptom.duration.progression));
+  }
   if (symptom.duration) {
     secondaryParts.push(formatSymptomDuration(symptom.duration));
+  }
+  // Add recovery time if available
+  if (symptom.duration?.recoveryTime) {
+    const recoveryText = formatSymptomDuration(symptom.duration.recoveryTime);
+    if (recoveryText) {
+      secondaryParts.push(`recovers ${recoveryText}`);
+    }
   }
   if (symptom.timeOfDay) {
     secondaryParts.push(formatTimeOfDay(symptom.timeOfDay));
@@ -94,8 +106,21 @@ export function SymptomChip({
   if (symptom.trigger) {
     accessibilityParts.push(formatActivityTrigger(symptom.trigger));
   }
+  // Add progression to accessibility label (without icons)
+  if (symptom.duration?.progression) {
+    const progressionText = formatProgression(symptom.duration.progression);
+    const progressionLabel = progressionText.split(' ').slice(1).join(' ') || progressionText;
+    accessibilityParts.push(progressionLabel);
+  }
   if (symptom.duration) {
     accessibilityParts.push(formatSymptomDuration(symptom.duration));
+  }
+  // Add recovery time to accessibility label
+  if (symptom.duration?.recoveryTime) {
+    const recoveryText = formatSymptomDuration(symptom.duration.recoveryTime);
+    if (recoveryText) {
+      accessibilityParts.push(`recovers ${recoveryText}`);
+    }
   }
   if (symptom.timeOfDay) {
     accessibilityParts.push(formatTimeOfDay(symptom.timeOfDay));
@@ -106,10 +131,10 @@ export function SymptomChip({
   const hasSeverity = !!symptom.severity;
   const chipColor = hasSeverity
     ? getSeverityColor(symptom.severity, colors)
-    : getSymptomColor(symptom.symptom);
+    : getSymptomColor(symptom.symptom, colors);
   const chipBackgroundColor = hasSeverity
     ? getSeverityBackgroundColor(symptom.severity, colors)
-    : getSymptomBackgroundColor(symptom.symptom);
+    : getSymptomBackgroundColor(symptom.symptom, colors);
 
   return (
     <View
