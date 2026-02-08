@@ -2,7 +2,7 @@
  * HomeScreen - Main rant input (redesigned per RantTrack UI Design System)
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { QuickActionChips } from '../components/QuickActionChips';
 import { QuickCheckInModal } from '../components/QuickCheckInModal';
 import { extractSymptoms } from '../nlp/extractor';
 import { getAllRantEntries, getDraftEntry, clearDraftEntry, saveRantEntry } from '../database/operations';
+import { getCustomLemmasMap } from '../database/customLemmaOps';
 import { RantEntry } from '../types';
 import { useAccessibilitySettings, useTheme, useTypography } from '../contexts/AccessibilityContext';
 
@@ -39,21 +40,7 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
   // Create dynamic styles based on current theme and typography
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
-  useEffect(() => {
-    loadYesterdayEntry();
-    checkForDraft();
-  }, []);
-
-  // Handle voice input result from VoiceRecordingScreen
-  useEffect(() => {
-    if (route.params?.voiceText) {
-      const voiceText = route.params.voiceText;
-      // Append voice text to draft
-      setDraftText((prev) => (prev ? `${prev} ${voiceText}` : voiceText));
-    }
-  }, [route.params?.voiceText]);
-
-  const loadYesterdayEntry = async () => {
+  const loadYesterdayEntry = useCallback(async () => {
     try {
       const entries = await getAllRantEntries();
       if (entries.length > 0) {
@@ -62,9 +49,9 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
     } catch (error) {
       console.error('Failed to load yesterday entry:', error);
     }
-  };
+  }, []);
 
-  const checkForDraft = async () => {
+  const checkForDraft = useCallback(async () => {
     try {
       const draft = await getDraftEntry();
       if (draft && draft.text.trim()) {
@@ -93,6 +80,24 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
     } catch (error) {
       console.error('Failed to check for draft:', error);
     }
+  }, []);
+
+  useEffect(() => {
+    loadYesterdayEntry();
+    checkForDraft();
+  }, [loadYesterdayEntry, checkForDraft]);
+
+  // Handle voice input result from VoiceRecordingScreen
+  useEffect(() => {
+    if (route.params?.voiceText) {
+      const voiceText = route.params.voiceText;
+      // Append voice text to draft
+      setDraftText((prev) => (prev ? `${prev} ${voiceText}` : voiceText));
+    }
+  }, [route.params?.voiceText]);
+
+  const handleCatchUpPress = () => {
+    navigation.navigate('CatchUp');
   };
 
   const handleRantSubmit = async (text: string) => {
@@ -100,7 +105,8 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
       setIsSaving(true);
 
       // Extract symptoms
-      const extractionResult = extractSymptoms(text);
+      const customLemmas = await getCustomLemmasMap();
+      const extractionResult = extractSymptoms(text, customLemmas);
 
       // Navigate to review screen
       navigation.navigate('ReviewEntry', {
@@ -199,6 +205,7 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
           <QuickActionChips
             onSameAsYesterday={handleSameAsYesterday}
             onQuickCheckIn={handleQuickCheckIn}
+            onCatchUp={handleCatchUpPress}
             hasYesterdayEntry={yesterdayEntry !== null}
           />
         )}
@@ -228,19 +235,21 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   container: {
     flex: 1,
     backgroundColor: colors.bgPrimary,
-    paddingTop: 17,
+    paddingTop: 50,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: 16,
     flexGrow: 1,
   },
   header: {
-    gap: 4,
-    marginBottom: 8,
+    gap: 2,
+    marginBottom: 12,
   },
   title: {
     ...typography.largeDisplay,
@@ -253,13 +262,13 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   rantCard: {
     backgroundColor: colors.bgSecondary,
     borderRadius: 24,
-    padding: 20,
+    padding: 24,
     flex: 1,
-    minHeight: 320,
+    minHeight: 360,
   },
   rantCardTitle: {
     ...typography.largeHeader,
     color: colors.accentPrimary,
-    marginBottom: 16,
+    marginBottom: 20,
   },
 });

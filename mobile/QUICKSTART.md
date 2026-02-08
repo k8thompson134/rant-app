@@ -30,7 +30,16 @@ You'll see something like this:
 › Press o │ open project in browser
 ```
 
-## Step 3: Run on Your Device
+## Step 3: Build Types
+
+RantTrack has two separate build variants to prevent overwriting your personal data while developing:
+
+- **Development** (default): `RantTrack Dev` - Use this for testing changes
+- **Personal Use**: `RantTrack` - Your actual data, only build when intentional
+
+This prevents accidentally overwriting your personal app when running development builds!
+
+## Step 4: Run on Your Device
 
 ### Option A: Your Phone (Easiest!)
 
@@ -48,12 +57,14 @@ You'll see something like this:
 
 **iOS Simulator** (Mac only):
 ```bash
-npm run ios
+npm run ios                    # Development build (RantTrack Dev)
+npm run ios:prod              # Personal use build (RantTrack)
 ```
 
 **Android Emulator**:
 ```bash
-npm run android
+npm run android               # Development build (RantTrack Dev)
+npm run android:prod          # Personal use build (RantTrack)
 ```
 (Make sure Android Studio and an emulator are set up)
 
@@ -64,6 +75,43 @@ npm run web
 ```
 
 Opens at `http://localhost:8081`
+
+### Option D: Wireless ADB (Android Physical Device)
+
+Run directly on your phone without a USB cable:
+
+**One-time setup (requires USB first):**
+```bash
+# Connect phone via USB, then enable wireless debugging
+adb tcpip 5555
+
+# Disconnect USB, then connect wirelessly
+adb connect 192.168.1.113:5555
+```
+
+**Reconnecting (no USB needed):**
+```bash
+adb connect 192.168.1.113:5555
+```
+
+**Run the app:**
+```bash
+npm run android               # Development build (RantTrack Dev)
+npm run android:prod          # Personal use build (RantTrack)
+```
+
+**Verify connection:**
+```bash
+adb devices
+# Should show: 192.168.1.113:5555  device
+```
+
+**Disconnect when done:**
+```bash
+adb disconnect 192.168.1.113:5555
+```
+
+> **Tip:** Your phone's IP may change if you reconnect to WiFi. Check it in Settings > WiFi > your network > IP address.
 
 ## Try It Out!
 

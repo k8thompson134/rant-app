@@ -16,7 +16,7 @@ import { VoiceInput } from './VoiceInput';
 import { RecordingOverlay } from './RecordingOverlay';
 import { Ionicons } from '@expo/vector-icons';
 import { ExpoSpeechRecognitionModule } from '@jamsch/expo-speech-recognition';
-import { useTheme, useTypography, useAccessibilitySettings } from '../contexts/AccessibilityContext';
+import { useTheme, useTypography, useAccessibilitySettings, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { clearDraftEntry } from '../database/operations';
 import { typography as baseTypography } from '../theme/typography';
@@ -33,6 +33,7 @@ export function RantInput({ onSubmit, placeholder, isLoading, initialText, onVoi
   const colors = useTheme();
   const typography = useTypography();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const touchTargetSize = useTouchTargetSize();  // ACCESSIBILITY: Use consistent touch target sizing
   const [text, setText] = useState(initialText || '');
   const [isRecording, setIsRecording] = useState(false);
   const { settings } = useAccessibilitySettings();
@@ -125,11 +126,15 @@ export function RantInput({ onSubmit, placeholder, isLoading, initialText, onVoi
         {onVoicePress ? (
           // Use navigation to VoiceRecordingScreen
           <TouchableOpacity
-            style={styles.voiceButton}
+            style={[
+              styles.voiceButton,
+              { width: touchTargetSize, height: touchTargetSize }  // ACCESSIBILITY: Use hook for consistent sizing
+            ]}
             onPress={onVoicePress}
             disabled={isLoading}
             accessible={true}
             accessibilityLabel="Start voice input"
+            accessibilityHint="Opens voice recording screen for hands-free symptom entry"  // ACCESSIBILITY: Explain action
             accessibilityRole="button"
           >
             <Ionicons name="mic" size={24} color={colors.accentPrimary} />
@@ -143,9 +148,18 @@ export function RantInput({ onSubmit, placeholder, isLoading, initialText, onVoi
           />
         )}
         <TouchableOpacity
-          style={[styles.button, (!text.trim() || isLoading) && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            { minHeight: touchTargetSize },  // ACCESSIBILITY: Ensure save button meets touch target minimum
+            (!text.trim() || isLoading) && styles.buttonDisabled
+          ]}
           onPress={handleSubmit}
           disabled={!text.trim() || isLoading}
+          accessible={true}
+          accessibilityLabel="Save entry"
+          accessibilityHint="Processes and saves your symptom entry"  // ACCESSIBILITY: Explain action
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !text.trim() || isLoading }}  // ACCESSIBILITY: Announce disabled state
         >
           {isLoading ? (
             <ActivityIndicator color={colors.bgPrimary} />
@@ -211,8 +225,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     color: colors.textMuted,
   },
   voiceButton: {
-    width: 48,
-    height: 48,
+    // ACCESSIBILITY: Width and height now set dynamically via touchTargetSize hook
     backgroundColor: colors.bgElevated,
     borderRadius: 16,
     alignItems: 'center',

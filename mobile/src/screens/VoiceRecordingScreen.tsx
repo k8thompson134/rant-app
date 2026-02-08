@@ -4,7 +4,7 @@
  * Used by HomeScreen and QuickAddEntry for voice input
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RecordingOverlay } from '../components/RecordingOverlay';
 import { useTheme, useTypography } from '../contexts/AccessibilityContext';
+import { useCustomLemmas } from '../contexts/CustomLemmasContext';
 import { darkTheme } from '../theme/colors';
 import { extractSymptoms } from '../nlp/extractor';
 
@@ -34,6 +35,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'VoiceRecording'>;
 export function VoiceRecordingScreen({ route, navigation }: Props) {
   const colors = useTheme();
   const typography = useTypography();
+  const { customLemmas } = useCustomLemmas();
   const [isRecording, setIsRecording] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -41,6 +43,48 @@ export function VoiceRecordingScreen({ route, navigation }: Props) {
   const [accumulatedText, setAccumulatedText] = useState('');
   const shouldNavigateAfterEndRef = useRef(false);
   const accumulatedTextRef = useRef('');
+
+  const startRecording = useCallback(async () => {
+    try {
+      // Request permissions
+      const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+
+      if (!result.granted) {
+        Alert.alert(
+          'Permission Required',
+          'Microphone permission is needed for voice input.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
+
+      setShouldKeepListening(true);
+      setIsRecording(true);
+      setIsProcessing(false);
+
+      // Add small delay to allow native module initialization
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      // Start speech recognition with extended settings for low-energy users
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: true,
+        maxAlternatives: 1,
+        continuous: true, // Keep listening continuously
+        requiresOnDeviceRecognition: false,
+        addsPunctuation: true,
+        contextualStrings: ['symptom', 'pain', 'fatigue', 'nausea', 'headache'],
+        // Allow explicit language - important for authentic symptom expression
+        androidIntentOptions: {
+          EXTRA_MASK_OFFENSIVE_WORDS: false,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      setIsRecording(false);
+      Alert.alert('Error', 'Failed to start voice recording');
+    }
+  }, [navigation]);
 
   // Handle speech recognition events
   useSpeechRecognitionEvent('start', () => {
@@ -148,42 +192,7 @@ export function VoiceRecordingScreen({ route, navigation }: Props) {
         console.log('Cleanup error:', error);
       }
     };
-  }, []);
-
-  const startRecording = async () => {
-    try {
-      // Request permissions
-      const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-
-      if (!result.granted) {
-        Alert.alert(
-          'Permission Required',
-          'Microphone permission is needed for voice input.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
-        return;
-      }
-
-      setShouldKeepListening(true);
-      setIsRecording(true);
-      setIsProcessing(false);
-
-      // Start speech recognition with extended settings for low-energy users
-      ExpoSpeechRecognitionModule.start({
-        lang: 'en-US',
-        interimResults: true,
-        maxAlternatives: 1,
-        continuous: true, // Keep listening continuously
-        requiresOnDeviceRecognition: false,
-        addsPunctuation: true,
-        contextualStrings: ['symptom', 'pain', 'fatigue', 'nausea', 'headache'],
-      });
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-      setIsRecording(false);
-      Alert.alert('Error', 'Failed to start voice recording');
-    }
-  };
+  }, [startRecording]);
 
   const handleStopRecording = async () => {
     try {
@@ -203,7 +212,7 @@ export function VoiceRecordingScreen({ route, navigation }: Props) {
   const handleComplete = (text: string) => {
     // If coming from HomeInput, go directly to ReviewEntry
     if (route.params.returnScreen === 'HomeInput') {
-      const extractionResult = extractSymptoms(text);
+      const extractionResult = extractSymptoms(text, customLemmas);
       navigation.navigate('ReviewEntry' as any, {
         rantText: text,
         extractionResult,

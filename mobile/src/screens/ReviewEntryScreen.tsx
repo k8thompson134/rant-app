@@ -16,11 +16,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../types/navigation';
-import { EditableSymptom, ExtractedSymptom, Severity, SYMPTOM_DISPLAY_NAMES } from '../types';
+import {
+  EditableSymptom,
+  ExtractedSymptom,
+  SYMPTOM_DISPLAY_NAMES,
+  formatActivityTrigger,
+  formatSymptomDuration,
+  formatTimeOfDay,
+  getSeverityColor,
+} from '../types';
 import { saveRantEntry } from '../database/operations';
 import { SymptomChip } from '../components/SymptomChip';
-import { SeverityPicker } from '../components/SeverityPicker';
+import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
 import { AddSymptomModal } from '../components/AddSymptomModal';
+import { SpoonCountDisplay } from '../components/SpoonCountDisplay';
 import { useTouchTargetSize, useTheme, useTypography } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
 
@@ -51,17 +60,16 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
 
   const editingSymptom = symptoms.find((s) => s.id === editingSymptomId);
 
-  const handleEditSeverity = (symptomId: string) => {
+  const handleEditSymptom = (symptomId: string) => {
     setEditingSymptomId(symptomId);
   };
 
-  const handleSeverityChange = (severity: Severity | null) => {
+  const handleSymptomUpdate = (updates: Partial<EditableSymptom>) => {
     if (editingSymptomId) {
       setSymptoms((prev) =>
-        prev.map((s) => (s.id === editingSymptomId ? { ...s, severity } : s))
+        prev.map((s) => (s.id === editingSymptomId ? { ...s, ...updates } : s))
       );
     }
-    setEditingSymptomId(null);
   };
 
   const handleDeleteSymptom = (symptomId: string) => {
@@ -126,6 +134,11 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
           <Text style={styles.date}>{formatDate()}</Text>
         </View>
 
+        {/* Spoon Count Display */}
+        {extractionResult.spoonCount && (
+          <SpoonCountDisplay spoonCount={extractionResult.spoonCount} />
+        )}
+
         {/* Quick Summary - All Symptoms */}
         {symptoms.length > 0 && (
           <TouchableOpacity
@@ -142,19 +155,45 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.topSymptomsContainer}>
               {symptoms.map((symptom) => {
-                const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+                const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom.replace(/_/g, ' ');
                 const painQualifiers = symptom.painDetails?.qualifiers?.join(', ');
-                const painLocation = symptom.painDetails?.location;
+                const painLocation = symptom.painDetails?.location?.replace(/_/g, ' ');
+                const severityColor = getSeverityColor(symptom.severity, colors);
+
+                // Build context info (trigger, duration, recovery, timeOfDay)
+                const contextParts: string[] = [];
+                if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));
+                if (symptom.duration) contextParts.push(formatSymptomDuration(symptom.duration));
+                // Add recovery time if available
+                if (symptom.duration?.recoveryTime) {
+                  const recoveryText = formatSymptomDuration(symptom.duration.recoveryTime);
+                  if (recoveryText) {
+                    contextParts.push(`recovers ${recoveryText}`);
+                  }
+                }
+                if (symptom.timeOfDay) contextParts.push(formatTimeOfDay(symptom.timeOfDay));
+                const contextText = contextParts.join(' · ');
 
                 return (
                   <View key={symptom.id} style={styles.topSymptomItem}>
-                    <Ionicons name="checkmark-circle" size={20} color={colors.accentPrimary} />
-                    <Text style={styles.topSymptomText}>
-                      {displayName}
-                      {painLocation && <Text style={styles.painDetailText}> ({painLocation})</Text>}
-                      {painQualifiers && <Text style={styles.painDetailText}> - {painQualifiers}</Text>}
-                      {symptom.severity && <Text style={styles.severityText}> · {symptom.severity}</Text>}
-                    </Text>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={symptom.severity ? severityColor : colors.accentPrimary}
+                    />
+                    <View style={styles.topSymptomTextContainer}>
+                      <Text style={styles.topSymptomText}>
+                        {displayName}
+                        {painLocation && <Text style={styles.painDetailText}> ({painLocation})</Text>}
+                        {painQualifiers && <Text style={styles.painDetailText}> - {painQualifiers}</Text>}
+                        {symptom.severity && (
+                          <Text style={[styles.severityText, { color: severityColor }]}> · {symptom.severity}</Text>
+                        )}
+                      </Text>
+                      {contextText.length > 0 && (
+                        <Text style={styles.contextText}>{contextText}</Text>
+                      )}
+                    </View>
                   </View>
                 );
               })}
@@ -169,7 +208,11 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
           onPress={handleSave}
           disabled={isSaving}
           accessible={true}
-          accessibilityLabel="Looks good - Save entry"
+          accessibilityLabel={
+            extractionResult.spoonCount
+              ? `Looks good - Save entry with ${extractionResult.spoonCount.current} spoons, ${extractionResult.spoonCount.energyLevel} out of 10 energy`
+              : 'Looks good - Save entry'
+          }
           accessibilityRole="button"
         >
           <Ionicons name="checkmark-circle-outline" size={24} color={colors.bgPrimary} />
@@ -234,7 +277,7 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
                       key={symptom.id}
                       symptom={symptom}
                       editable
-                      onEdit={() => handleEditSeverity(symptom.id!)}
+                      onEdit={() => handleEditSymptom(symptom.id!)}
                       onDelete={() => handleDeleteSymptom(symptom.id!)}
                     />
                   ))}
@@ -270,11 +313,10 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
 
       {/* Modals */}
       {editingSymptom && (
-        <SeverityPicker
+        <SymptomDetailEditor
           visible={editingSymptomId !== null}
-          symptomName={editingSymptom.symptom}
-          currentSeverity={editingSymptom.severity || null}
-          onSelect={handleSeverityChange}
+          symptom={editingSymptom}
+          onUpdate={handleSymptomUpdate}
           onDismiss={() => setEditingSymptomId(null)}
         />
       )}
@@ -346,13 +388,20 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   },
   topSymptomItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
+  },
+  topSymptomTextContainer: {
+    flex: 1,
   },
   topSymptomText: {
     ...typography.bodyMedium,
     color: colors.textPrimary,
-    flex: 1,
+  },
+  contextText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   severityText: {
     ...typography.body,
@@ -440,6 +489,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    alignItems: 'flex-start',
   },
   emptyText: {
     ...typography.small,

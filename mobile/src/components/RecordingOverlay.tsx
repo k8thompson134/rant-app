@@ -44,15 +44,19 @@ export function RecordingOverlay({ onTap }: RecordingOverlayProps) {
   return (
     <TouchableWithoutFeedback onPress={onTap}>
       <View style={styles.container}>
-        <View style={styles.animationContainer}>
-          {settings.reducedMotion ? (
-            <View style={styles.staticIndicator}>
-              <Ionicons name="mic" size={80} color={colors.accentPrimary} />
-              <Text style={styles.recordingText}>Recording</Text>
-            </View>
-          ) : (
-            <LavaLampAnimation />
-          )}
+        <View style={styles.centerContent}>
+          <Text style={[styles.recordingLabel, { color: colors.textSecondary }]}>Recording</Text>
+
+          <View style={styles.animationContainer}>
+            {settings.reducedMotion ? (
+              <View style={styles.staticIndicator}>
+                <Ionicons name="mic" size={80} color={colors.accentPrimary} />
+                <Text style={styles.recordingText}>Recording</Text>
+              </View>
+            ) : (
+              <LavaLampAnimation />
+            )}
+          </View>
         </View>
 
         <View style={styles.controls}>
@@ -70,20 +74,22 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     backgroundColor: colors.bgElevated,
     borderRadius: 16,
     padding: 20,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  centerContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
-  header: {
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
+  recordingLabel: {
+    ...typography.largeHeader,
+    marginBottom: 32,
+    height: 32,
   },
   animationContainer: {
-    flex: 1,
+    height: 280,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',

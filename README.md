@@ -106,10 +106,11 @@ See [LICENSE](LICENSE) for details.
 
 ## Technology
 
-- **Frontend**: React Native (Expo)
+- **Frontend**: React Native (Expo) with [New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page) enabled
 - **Database**: SQLite + Drizzle ORM
 - **NLP**: Custom JavaScript symptom extraction engine (2,260+ lines)
 - **Voice**: Native iOS/Android speech recognition APIs
+- **Build & Deploy**: EAS Build (AAB for Google Play, IPA for App Store) with OTA updates via EAS Update
 
 ---
 
@@ -117,7 +118,7 @@ See [LICENSE](LICENSE) for details.
 
 ### Beta Testing
 
-RantTrack is currently in beta. To join:
+RantTrack is currently in beta (v0.9.0). To join:
 
 1. **iOS**: [TestFlight link coming soon]
 2. **Android**: [Google Play Internal Testing link coming soon]
@@ -142,6 +143,21 @@ npx expo run:ios
 npx expo run:android
 ```
 
+### Building for Distribution
+
+RantTrack uses [EAS Build](https://docs.expo.dev/build/introduction/) for native builds and [EAS Update](https://docs.expo.dev/eas-update/introduction/) for over-the-air updates.
+
+```bash
+# Build for beta testing (Android - AAB for Google Play)
+eas build --profile beta --platform android
+
+# Build for beta testing (iOS - TestFlight)
+eas build --profile beta --platform ios
+
+# Push an OTA update
+eas update --branch beta
+```
+
 ---
 
 ## Roadmap
@@ -152,12 +168,15 @@ npx expo run:android
 - [x] Calendar & history views
 - [x] Accessibility features
 - [x] 100% local storage
+- [x] React Native New Architecture
+- [x] EAS Build configuration (AAB for Google Play, IPA for App Store)
+- [x] OTA updates via EAS Update
 - [ ] Beta testing
 
 ### v1.1 (Planned)
 - [ ] Data export (CSV, PDF)
 - [ ] Symptom trends visualization
-- [ ] Custom symptom vocabulary
+- [x] Custom symptom vocabulary
 - [x] Light theme option
 
 ### v2.0 (Future)

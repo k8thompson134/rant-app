@@ -6,8 +6,20 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { EditableSymptom, SYMPTOM_DISPLAY_NAMES, getSymptomColor, getSymptomBackgroundColor } from '../types';
-import { useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
+import {
+  EditableSymptom,
+  SYMPTOM_DISPLAY_NAMES,
+  getSymptomColor,
+  getSymptomBackgroundColor,
+  getSeverityColor,
+  getSeverityBackgroundColor,
+  formatActivityTrigger,
+  formatSymptomDuration,
+  formatTimeOfDay,
+  formatProgression,
+  withOpacity,
+} from '../types';
+import { useTypography, useTouchTargetSize, useTheme } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
 import { typography as baseTypography } from '../theme/typography';
 
@@ -34,7 +46,7 @@ function formatPainDetails(painDetails?: { qualifiers: string[]; location: strin
 
   // Add location (e.g., "shoulder")
   if (painDetails.location) {
-    parts.push(painDetails.location.replace('_', ' '));
+    parts.push(painDetails.location.replace(/_/g, ' '));
   }
 
   return parts.length > 0 ? ` (${parts.join(' in ')})` : '';
@@ -49,12 +61,80 @@ export function SymptomChip({
 }: SymptomChipProps) {
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
-  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+  const colors = useTheme();
+  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom.replace(/_/g, ' ');
   const severityText = symptom.severity ? ` · ${symptom.severity}` : '';
   const painDetailsText = formatPainDetails(symptom.painDetails);
 
-  const chipColor = getSymptomColor(symptom.symptom);
-  const chipBackgroundColor = getSymptomBackgroundColor(symptom.symptom);
+  // Build secondary info parts (trigger, progression, duration, recovery, timeOfDay)
+  const secondaryParts: string[] = [];
+  if (symptom.trigger) {
+    secondaryParts.push(formatActivityTrigger(symptom.trigger));
+  }
+  // Add progression indicator (visual indicator of how symptom is evolving)
+  if (symptom.duration?.progression) {
+    secondaryParts.push(formatProgression(symptom.duration.progression));
+  }
+  if (symptom.duration) {
+    secondaryParts.push(formatSymptomDuration(symptom.duration));
+  }
+  // Add recovery time if available
+  if (symptom.duration?.recoveryTime) {
+    const recoveryText = formatSymptomDuration(symptom.duration.recoveryTime);
+    if (recoveryText) {
+      secondaryParts.push(`recovers ${recoveryText}`);
+    }
+  }
+  if (symptom.timeOfDay) {
+    secondaryParts.push(formatTimeOfDay(symptom.timeOfDay));
+  }
+
+  const secondaryText = secondaryParts.join(' · ');
+  const hasSecondaryInfo = !compact && secondaryText.length > 0;
+
+  // Build accessibility label with all info
+  const accessibilityParts = [displayName];
+  if (symptom.severity) accessibilityParts.push(symptom.severity);
+  if (symptom.painDetails) {
+    if (symptom.painDetails.qualifiers.length > 0) {
+      accessibilityParts.push(symptom.painDetails.qualifiers.join(', '));
+    }
+    if (symptom.painDetails.location) {
+      accessibilityParts.push(`in ${symptom.painDetails.location.replace(/_/g, ' ')}`);
+    }
+  }
+  if (symptom.trigger) {
+    accessibilityParts.push(formatActivityTrigger(symptom.trigger));
+  }
+  // Add progression to accessibility label (without icons)
+  if (symptom.duration?.progression) {
+    const progressionText = formatProgression(symptom.duration.progression);
+    const progressionLabel = progressionText.split(' ').slice(1).join(' ') || progressionText;
+    accessibilityParts.push(progressionLabel);
+  }
+  if (symptom.duration) {
+    accessibilityParts.push(formatSymptomDuration(symptom.duration));
+  }
+  // Add recovery time to accessibility label
+  if (symptom.duration?.recoveryTime) {
+    const recoveryText = formatSymptomDuration(symptom.duration.recoveryTime);
+    if (recoveryText) {
+      accessibilityParts.push(`recovers ${recoveryText}`);
+    }
+  }
+  if (symptom.timeOfDay) {
+    accessibilityParts.push(formatTimeOfDay(symptom.timeOfDay));
+  }
+  const accessibilityLabel = accessibilityParts.join(', ');
+
+  // Use severity-based colors when severity is present, otherwise fall back to symptom category colors
+  const hasSeverity = !!symptom.severity;
+  const chipColor = hasSeverity
+    ? getSeverityColor(symptom.severity, colors)
+    : getSymptomColor(symptom.symptom, colors);
+  const chipBackgroundColor = hasSeverity
+    ? getSeverityBackgroundColor(symptom.severity, colors)
+    : getSymptomBackgroundColor(symptom.symptom, colors);
 
   return (
     <View
@@ -63,10 +143,21 @@ export function SymptomChip({
         { backgroundColor: chipBackgroundColor },
         compact && styles.chipCompact,
       ]}
+      accessible={true}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="text"
     >
-      <Text style={[styles.chipText, { color: chipColor }]}>
-        {displayName}{severityText}{painDetailsText}
-      </Text>
+      <View style={styles.textContainer}>
+        <Text style={[styles.chipText, { color: chipColor }]}>
+          {displayName}{severityText}{painDetailsText}
+        </Text>
+
+        {hasSecondaryInfo && (
+          <Text style={[styles.secondaryText, { color: colors.textMuted }]}>
+            {secondaryText}
+          </Text>
+        )}
+      </View>
 
       {editable && (
         <View style={styles.actions}>
@@ -75,7 +166,7 @@ export function SymptomChip({
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: chipColor + '33',
+                  backgroundColor: withOpacity(chipColor, 0.2),
                   minWidth: touchTargetSize,
                   minHeight: touchTargetSize,
                 }
@@ -93,7 +184,7 @@ export function SymptomChip({
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: chipColor + '33',
+                  backgroundColor: withOpacity(chipColor, 0.2),
                   minWidth: touchTargetSize,
                   minHeight: touchTargetSize,
                 }
@@ -116,6 +207,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -125,9 +217,17 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
   },
+  textContainer: {
+    flexShrink: 1,
+  },
   chipText: {
     ...baseTypography.small,
     fontFamily: 'DMSans_500Medium',
+  },
+  secondaryText: {
+    ...baseTypography.caption,
+    fontFamily: 'DMSans_400Regular',
+    marginTop: 2,
   },
   actions: {
     flexDirection: 'row',

@@ -18,14 +18,15 @@ import { useTheme, useTouchTargetSize } from '../contexts/AccessibilityContext';
 
 interface VoiceInputProps {
   onResult: (text: string) => void;
+  onInterimResult?: (text: string) => void;
   disabled?: boolean;
   onRecordingStateChange?: (isRecording: boolean) => void;
 }
 
-export function VoiceInput({ onResult, disabled, onRecordingStateChange }: VoiceInputProps) {
+export function VoiceInput({ onResult, onInterimResult, disabled, onRecordingStateChange }: VoiceInputProps) {
   const colors = useTheme();
   const touchTargetSize = useTouchTargetSize();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, touchTargetSize), [colors, touchTargetSize]);
   const [isRecording, setIsRecording] = useState(false);
 
   // Handle speech recognition events
@@ -47,7 +48,11 @@ export function VoiceInput({ onResult, disabled, onRecordingStateChange }: Voice
     if (event.results && event.results.length > 0) {
       const transcript = event.results[0]?.transcript;
       if (transcript && transcript.trim()) {
-        // Only use final results
+        // Emit interim results as user speaks (for real-time feedback)
+        if (!event.isFinal && onInterimResult) {
+          onInterimResult(transcript);
+        }
+        // Emit final results when speech segment is complete
         if (event.isFinal) {
           onResult(transcript);
         }
@@ -91,6 +96,9 @@ export function VoiceInput({ onResult, disabled, onRecordingStateChange }: Voice
 
       setIsRecording(true);
       onRecordingStateChange?.(true);
+
+      // Add small delay to allow native module initialization
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Start speech recognition with extended settings
       ExpoSpeechRecognitionModule.start({
@@ -152,10 +160,10 @@ export function VoiceInput({ onResult, disabled, onRecordingStateChange }: Voice
   );
 }
 
-const createStyles = (colors: ReturnType<typeof useTheme>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, touchTargetSize: number) => StyleSheet.create({
   button: {
-    width: 48,
-    height: 48,
+    width: touchTargetSize,
+    height: touchTargetSize,
     backgroundColor: colors.bgElevated,
     borderRadius: 16,
     alignItems: 'center',
