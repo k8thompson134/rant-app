@@ -5,10 +5,10 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "node scripts/build-variant.js dev && expo run:android",
-    "ios": "node scripts/build-variant.js dev && expo run:ios",
-    "android:prod": "node scripts/build-variant.js prod && expo run:android && node scripts/build-variant.js dev",
-    "ios:prod": "node scripts/build-variant.js prod && expo run:ios && node scripts/build-variant.js dev",
+    "android": "npx cross-env APP_VARIANT=development expo run:android",
+    "ios": "npx cross-env APP_VARIANT=development expo run:ios",
+    "android:prod": "npx cross-env APP_VARIANT=production expo run:android",
+    "ios:prod": "npx cross-env APP_VARIANT=production expo run:ios",
     "web": "expo start --web",
     "tsc": "tsc --noEmit",
     "postinstall": "npx jetify",
@@ -50,6 +50,7 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "cross-env": "^10.1.0",
     "expo-dev-client": "~6.0.20",
     "husky": "^9.1.7",
     "jetifier": "^2.0.0",
