@@ -30,7 +30,16 @@ You'll see something like this:
 › Press o │ open project in browser
 ```
 
-## Step 3: Run on Your Device
+## Step 3: Build Types
+
+RantTrack has two separate build variants to prevent overwriting your personal data while developing:
+
+- **Development** (default): `RantTrack Dev` - Use this for testing changes
+- **Personal Use**: `RantTrack` - Your actual data, only build when intentional
+
+This prevents accidentally overwriting your personal app when running development builds!
+
+## Step 4: Run on Your Device
 
 ### Option A: Your Phone (Easiest!)
 
@@ -48,12 +57,14 @@ You'll see something like this:
 
 **iOS Simulator** (Mac only):
 ```bash
-npm run ios
+npm run ios                    # Development build (RantTrack Dev)
+npm run ios:prod              # Personal use build (RantTrack)
 ```
 
 **Android Emulator**:
 ```bash
-npm run android
+npm run android               # Development build (RantTrack Dev)
+npm run android:prod          # Personal use build (RantTrack)
 ```
 (Make sure Android Studio and an emulator are set up)
 
@@ -85,7 +96,8 @@ adb connect 192.168.1.113:5555
 
 **Run the app:**
 ```bash
-npx expo run:android
+npm run android               # Development build (RantTrack Dev)
+npm run android:prod          # Personal use build (RantTrack)
 ```
 
 **Verify connection:**

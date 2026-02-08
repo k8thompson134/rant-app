@@ -34,6 +34,7 @@ import { SeverityPicker } from './SeverityPicker';
 import { TimeOfDayPicker } from './TimeOfDayPicker';
 import { DurationPicker } from './DurationPicker';
 import { TriggerPicker } from './TriggerPicker';
+import { PainLocationPicker } from './PainLocationPicker';
 
 interface SymptomDetailEditorProps {
   visible: boolean;
@@ -42,7 +43,7 @@ interface SymptomDetailEditorProps {
   onDismiss: () => void;
 }
 
-type EditingField = 'severity' | 'timeOfDay' | 'duration' | 'trigger' | null;
+type EditingField = 'severity' | 'timeOfDay' | 'duration' | 'trigger' | 'location' | null;
 
 export function SymptomDetailEditor({
   visible,
@@ -68,6 +69,9 @@ export function SymptomDetailEditor({
 
   const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
 
+  // Check if this is a pain symptom (eligible for location editing)
+  const isPainSymptom = symptom.symptom.includes('pain') || symptom.painDetails !== undefined;
+
   // Handle updates from sub-pickers
   const handleSeverityChange = (severity: Severity | null) => {
     onUpdate({ severity });
@@ -89,6 +93,15 @@ export function SymptomDetailEditor({
     setEditingField(null);
   };
 
+  const handleLocationChange = (location: string | null) => {
+    const updatedPainDetails = {
+      qualifiers: symptom.painDetails?.qualifiers || [],
+      location: location,
+    };
+    onUpdate({ painDetails: updatedPainDetails });
+    setEditingField(null);
+  };
+
   // Get display values for each field
   const severityDisplay = symptom.severity || 'Not set';
   const timeOfDayDisplay = symptom.timeOfDay
@@ -99,6 +112,10 @@ export function SymptomDetailEditor({
     : 'Not set';
   const triggerDisplay = symptom.trigger
     ? formatActivityTrigger(symptom.trigger)
+    : 'Not set';
+
+  const locationDisplay = symptom.painDetails?.location
+    ? symptom.painDetails.location.replace(/_/g, ' ')
     : 'Not set';
 
   return (
@@ -296,6 +313,52 @@ export function SymptomDetailEditor({
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </TouchableOpacity>
+
+              {/* Location (only for pain symptoms) */}
+              {isPainSymptom && (
+                <TouchableOpacity
+                  style={[styles.fieldRow, { minHeight: touchTargetSize }]}
+                  onPress={() => setEditingField('location')}
+                  accessible={true}
+                  accessibilityLabel={`Location: ${locationDisplay}. Tap to change.`}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.fieldInfo}>
+                    <View style={styles.fieldHeader}>
+                      <View
+                        style={[
+                          styles.fieldIcon,
+                          {
+                            backgroundColor: symptom.painDetails?.location
+                              ? colors.accentLight
+                              : colors.bgElevated,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="body-outline"
+                          size={18}
+                          color={
+                            symptom.painDetails?.location
+                              ? colors.accentPrimary
+                              : colors.textMuted
+                          }
+                        />
+                      </View>
+                      <Text style={styles.fieldLabel}>Location</Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.fieldValue,
+                        !symptom.painDetails?.location && styles.fieldValueEmpty,
+                      ]}
+                    >
+                      {locationDisplay}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
             </ScrollView>
 
             <TouchableOpacity
@@ -344,6 +407,16 @@ export function SymptomDetailEditor({
         onSelect={handleTriggerChange}
         onDismiss={() => setEditingField(null)}
       />
+
+      {isPainSymptom && (
+        <PainLocationPicker
+          visible={editingField === 'location'}
+          symptomName={displayName}
+          currentLocation={symptom.painDetails?.location || null}
+          onSelect={handleLocationChange}
+          onDismiss={() => setEditingField(null)}
+        />
+      )}
     </>
   );
 }
