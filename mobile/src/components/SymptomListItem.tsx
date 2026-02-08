@@ -36,8 +36,8 @@ export function SymptomListItem({ symptom, onPress, onRemove }: SymptomListItemP
 
   const severityColor = getSeverityColor(symptom.severity, colors);
   const bgColor = getSeverityBackgroundColor(symptom.severity, colors);
-  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
-  const painLocation = symptom.painDetails?.location;
+  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom.replace(/_/g, ' ');
+  const painLocation = symptom.painDetails?.location?.replace(/_/g, ' ');
 
   const contextParts: string[] = [];
   if (symptom.trigger) contextParts.push(formatActivityTrigger(symptom.trigger));

@@ -46,7 +46,7 @@ function formatPainDetails(painDetails?: { qualifiers: string[]; location: strin
 
   // Add location (e.g., "shoulder")
   if (painDetails.location) {
-    parts.push(painDetails.location.replace('_', ' '));
+    parts.push(painDetails.location.replace(/_/g, ' '));
   }
 
   return parts.length > 0 ? ` (${parts.join(' in ')})` : '';
@@ -62,7 +62,7 @@ export function SymptomChip({
   const typography = useTypography();
   const touchTargetSize = useTouchTargetSize();
   const colors = useTheme();
-  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom.replace(/_/g, ' ');
   const severityText = symptom.severity ? ` · ${symptom.severity}` : '';
   const painDetailsText = formatPainDetails(symptom.painDetails);
 
@@ -100,7 +100,7 @@ export function SymptomChip({
       accessibilityParts.push(symptom.painDetails.qualifiers.join(', '));
     }
     if (symptom.painDetails.location) {
-      accessibilityParts.push(`in ${symptom.painDetails.location.replace('_', ' ')}`);
+      accessibilityParts.push(`in ${symptom.painDetails.location.replace(/_/g, ' ')}`);
     }
   }
   if (symptom.trigger) {

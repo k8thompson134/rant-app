@@ -40,18 +40,18 @@ interface LocationOption {
 }
 
 const COMMON_LOCATIONS: LocationOption[] = [
-  { value: 'head', label: 'Head', icon: 'body-outline' },
-  { value: 'neck', label: 'Neck', icon: 'body-outline' },
-  { value: 'shoulder', label: 'Shoulder', icon: 'body-outline' },
-  { value: 'upper_back', label: 'Upper Back', icon: 'body-outline' },
-  { value: 'lower_back', label: 'Lower Back', icon: 'body-outline' },
+  { value: 'head', label: 'Head', icon: 'happy-outline' },
+  { value: 'neck', label: 'Neck', icon: 'swap-vertical-outline' },
+  { value: 'shoulder', label: 'Shoulder', icon: 'fitness-outline' },
+  { value: 'upper_back', label: 'Upper Back', icon: 'arrow-up-outline' },
+  { value: 'lower_back', label: 'Lower Back', icon: 'arrow-down-outline' },
   { value: 'hip', label: 'Hip', icon: 'body-outline' },
-  { value: 'knee', label: 'Knee', icon: 'body-outline' },
-  { value: 'foot', label: 'Foot', icon: 'body-outline' },
-  { value: 'abdomen', label: 'Abdomen', icon: 'body-outline' },
+  { value: 'knee', label: 'Knee', icon: 'walk-outline' },
+  { value: 'foot', label: 'Foot', icon: 'footsteps-outline' },
+  { value: 'abdomen', label: 'Abdomen', icon: 'ellipse-outline' },
   { value: 'chest', label: 'Chest', icon: 'heart-outline' },
-  { value: 'jaw', label: 'Jaw', icon: 'body-outline' },
-  { value: 'wrist', label: 'Wrist', icon: 'body-outline' },
+  { value: 'jaw', label: 'Jaw', icon: 'chatbubble-ellipses-outline' },
+  { value: 'wrist', label: 'Wrist', icon: 'hand-left-outline' },
 ];
 
 type PickerMode = 'quick' | 'search';

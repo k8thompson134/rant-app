@@ -67,7 +67,7 @@ export function SymptomDetailEditor({
     }
   }, [visible, symptom]);
 
-  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+  const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom.replace(/_/g, ' ');
 
   // Check if this is a pain symptom (eligible for location editing)
   const isPainSymptom = symptom.symptom.includes('pain') || symptom.painDetails !== undefined;

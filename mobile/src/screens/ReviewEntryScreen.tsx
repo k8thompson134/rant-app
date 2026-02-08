@@ -155,9 +155,9 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.topSymptomsContainer}>
               {symptoms.map((symptom) => {
-                const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom;
+                const displayName = SYMPTOM_DISPLAY_NAMES[symptom.symptom] || symptom.symptom.replace(/_/g, ' ');
                 const painQualifiers = symptom.painDetails?.qualifiers?.join(', ');
-                const painLocation = symptom.painDetails?.location;
+                const painLocation = symptom.painDetails?.location?.replace(/_/g, ' ');
                 const severityColor = getSeverityColor(symptom.severity, colors);
 
                 // Build context info (trigger, duration, recovery, timeOfDay)
