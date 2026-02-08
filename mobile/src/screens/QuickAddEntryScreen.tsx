@@ -60,18 +60,19 @@ export function QuickAddEntryScreen({ route, navigation }: Props) {
         id: `${Date.now()}-${index}`,
       }));
 
-      // Merge with existing symptoms, avoiding duplicates
-      const mergedSymptoms = [...symptoms];
-      newSymptoms.forEach((newSymptom) => {
-        const exists = mergedSymptoms.some(
-          (existing) => existing.symptom === newSymptom.symptom
-        );
-        if (!exists) {
-          mergedSymptoms.push(newSymptom);
-        }
+      // Merge with existing symptoms, avoiding duplicates (functional update to avoid stale closure)
+      setSymptoms((prevSymptoms) => {
+        const mergedSymptoms = [...prevSymptoms];
+        newSymptoms.forEach((newSymptom) => {
+          const exists = mergedSymptoms.some(
+            (existing) => existing.symptom === newSymptom.symptom
+          );
+          if (!exists) {
+            mergedSymptoms.push(newSymptom);
+          }
+        });
+        return mergedSymptoms;
       });
-
-      setSymptoms(mergedSymptoms);
     }
   }, [route.params.voiceText, customLemmas]);
 

@@ -254,64 +254,70 @@ function ThemedApp() {
         >
           <Tab.Screen
             name="Home"
-            component={ThemedHomeStack}
             options={{
               tabBarLabel: 'Rant',
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="create-outline" size={size} color={color} />
               ),
             }}
-          />
+          >
+            {() => <ErrorBoundary><ThemedHomeStack /></ErrorBoundary>}
+          </Tab.Screen>
           <Tab.Screen
             name="Month"
-            component={ThemedMonthStack}
             options={{
               tabBarLabel: 'Month',
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="calendar-outline" size={size} color={color} />
               ),
             }}
-          />
+          >
+            {() => <ErrorBoundary><ThemedMonthStack /></ErrorBoundary>}
+          </Tab.Screen>
           <Tab.Screen
             name="Insights"
-            component={InsightsScreen}
             options={{
               tabBarLabel: 'Insights',
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="analytics-outline" size={size} color={color} />
               ),
             }}
-          />
+          >
+            {() => <ErrorBoundary><InsightsScreen /></ErrorBoundary>}
+          </Tab.Screen>
           <Tab.Screen
             name="Dictionary"
-            component={DictionaryScreen}
             options={{
               tabBarLabel: 'Dictionary',
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="book-outline" size={size} color={color} />
               ),
             }}
-          />
+          >
+            {() => <ErrorBoundary><DictionaryScreen /></ErrorBoundary>}
+          </Tab.Screen>
           <Tab.Screen
             name="Guide"
-            component={GuideScreen}
             options={{
               tabBarLabel: 'Guide',
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="help-circle-outline" size={size} color={color} />
               ),
             }}
-          />
+          >
+            {() => <ErrorBoundary><GuideScreen /></ErrorBoundary>}
+          </Tab.Screen>
           <Tab.Screen
             name="Settings"
-            component={ThemedSettingsStack}
             options={{
               tabBarLabel: 'Settings',
               tabBarIcon: ({ color, size}) => (
                 <Ionicons name="settings-outline" size={size} color={color} />
               ),
             }}
-          />
+          >
+            {() => <ErrorBoundary><ThemedSettingsStack /></ErrorBoundary>}
+          </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaView>

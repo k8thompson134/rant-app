@@ -10,6 +10,33 @@ import { Platform } from 'react-native';
 import type { CustomLemmaEntry } from '../types';
 
 /**
+ * Valid symptom names that custom lemmas can map to
+ */
+const VALID_SYMPTOMS = new Set([
+  'fatigue', 'pain', 'headache', 'dizziness', 'nausea', 'brain_fog',
+  'anxiety', 'depression', 'insomnia', 'muscle_pain', 'joint_pain',
+  'chest_pain', 'back_pain', 'neck_pain', 'cough', 'sore_throat',
+  'fever', 'chills', 'sweating', 'numbness_tingling', 'weakness',
+  'shortness_of_breath', 'palpitations', 'diarrhea', 'constipation',
+  'bloating', 'reflux', 'appetite_loss', 'weight_change', 'rash',
+  'hives', 'itching', 'dry_mouth', 'light_sensitivity', 'sound_sensitivity',
+  'memory', 'focus', 'executive_dysfunction', 'difficulty_concentrating',
+  'mood_swings', 'irritability', 'anger', 'rage', 'overwhelmed',
+  'panic', 'depersonalization', 'derealization', 'dissociation',
+  'ptsd', 'ocd', 'adhd', 'autism', 'hypermobility', 'dysautonomia',
+  'pem', 'me_cfs', 'long_covid', 'fibromyalgia', 'ibs', 'infection',
+  'inflammation', 'flare', 'delayed_recovery', 'unrefreshing_sleep',
+  'hypersomnia', 'malaise', 'vertigo', 'tremor', 'spasm', 'stiffness',
+]);
+
+/**
+ * Check if a symptom name is valid
+ */
+function isValidSymptom(symptom: string): boolean {
+  return VALID_SYMPTOMS.has(symptom.toLowerCase().trim());
+}
+
+/**
  * Check if database is available (not on web)
  */
 function isDatabaseAvailable(): boolean {
@@ -45,6 +72,10 @@ export async function addCustomLemma(
 
   if (!symptom) {
     throw new Error('Symptom cannot be empty');
+  }
+
+  if (!isValidSymptom(symptom)) {
+    throw new Error(`"${symptom}" is not a valid symptom name`);
   }
 
   const entry: CustomLemmaEntry = {
@@ -158,6 +189,9 @@ export async function updateCustomLemma(
     if (symptom !== undefined) {
       if (!symptom) {
         throw new Error('Symptom cannot be empty');
+      }
+      if (!isValidSymptom(symptom)) {
+        throw new Error(`"${symptom}" is not a valid symptom name`);
       }
       updates.symptom = symptom;
     }

@@ -11,6 +11,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SpoonCount, withOpacity } from '../types';
 import { useTypography, useTouchTargetSize, useTheme } from '../contexts/AccessibilityContext';
 import { typography as baseTypography } from '../theme/typography';
+import type { ThemeColors } from '../theme/colors';
 
 interface SpoonCountDisplayProps {
   spoonCount: SpoonCount;
@@ -23,7 +24,7 @@ interface SpoonCountDisplayProps {
  * - 3-5: Amber (severityModerate) - moderate energy
  * - 6-10: Green (severityGood) - good energy
  */
-function getEnergyColor(energyLevel: number, theme: any): string {
+function getEnergyColor(energyLevel: number, theme: ThemeColors): string {
   if (energyLevel <= 2) {
     return theme.severityRough;
   } else if (energyLevel <= 5) {
@@ -36,7 +37,7 @@ function getEnergyColor(energyLevel: number, theme: any): string {
 /**
  * Get background color with subtle tint based on energy level
  */
-function getEnergyBackgroundColor(energyLevel: number, theme: any): string {
+function getEnergyBackgroundColor(energyLevel: number, theme: ThemeColors): string {
   if (energyLevel <= 2) {
     // Rough: subtle red tint
     return withOpacity(theme.severityRough, 0.1);
@@ -53,7 +54,7 @@ function getEnergyBackgroundColor(energyLevel: number, theme: any): string {
  * Render spoon icons (filled vs empty based on energy)
  * Shows up to 10 spoons with visual representation of energy level
  */
-function renderSpoons(energyLevel: number, compact: boolean, color: string, theme: any): React.ReactNode {
+function renderSpoons(energyLevel: number, compact: boolean, color: string, theme: ThemeColors): React.ReactNode {
   const maxSpoons = 10;
   const spoons = [];
   const iconSize = compact ? 12 : 16;

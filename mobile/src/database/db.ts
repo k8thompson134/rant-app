@@ -44,10 +44,10 @@ async function setDbVersion(version: number): Promise<void> {
   if (!expoDb) return;
 
   try {
-    await expoDb.execAsync(`
-      DELETE FROM db_version;
-      INSERT INTO db_version (version) VALUES (${version});
-    `);
+    await expoDb.withTransactionAsync(async () => {
+      await expoDb!.runAsync('DELETE FROM db_version');
+      await expoDb!.runAsync('INSERT INTO db_version (version) VALUES (?)', [version]);
+    });
   } catch (error) {
     console.error('Failed to set database version:', error);
     throw error;

@@ -298,7 +298,7 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
       marginBottom: 28,
     },
     sectionTitle: {
-      ...typography.header,
+      ...typography.largeHeader,
       color: colors.textPrimary,
       marginBottom: 4,
     },

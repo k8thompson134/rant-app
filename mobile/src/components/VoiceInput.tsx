@@ -26,7 +26,7 @@ interface VoiceInputProps {
 export function VoiceInput({ onResult, onInterimResult, disabled, onRecordingStateChange }: VoiceInputProps) {
   const colors = useTheme();
   const touchTargetSize = useTouchTargetSize();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, touchTargetSize), [colors, touchTargetSize]);
   const [isRecording, setIsRecording] = useState(false);
 
   // Handle speech recognition events
@@ -160,10 +160,10 @@ export function VoiceInput({ onResult, onInterimResult, disabled, onRecordingSta
   );
 }
 
-const createStyles = (colors: ReturnType<typeof useTheme>) => StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>, touchTargetSize: number) => StyleSheet.create({
   button: {
-    width: 48,
-    height: 48,
+    width: touchTargetSize,
+    height: touchTargetSize,
     backgroundColor: colors.bgElevated,
     borderRadius: 16,
     alignItems: 'center',

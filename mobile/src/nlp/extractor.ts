@@ -52,9 +52,9 @@ export {
 } from './severity';
 export { extractPainDetailsFromTokens, extractPainDetails } from './painDetails';
 export { extractSpoonCount } from './spoonCount';
-export { extractActivityTriggers } from './activityTriggers';
+export { extractActivityTriggers, linkTriggersToSymptoms } from './activityTriggers';
 export { calculateConfidence } from './confidence';
-export { extractDuration, extractTimeOfDay } from './temporal';
+export { extractDuration, extractTimeOfDay, findTemporalMarkers } from './temporal';
 export { applyContextFilter, resolveSymptomConflicts, validateLemmaContext, isContextSensitiveLemma } from './contextFilter';
 export { SYMPTOM_LEMMAS } from './dictionaries/symptoms';
 

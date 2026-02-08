@@ -397,7 +397,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>, colors: Retu
       borderColor: withOpacity(colors.accentPrimary, 0.19),
     },
     stepNumberText: {
-      fontSize: (typography?.header?.fontSize || 18) + 2,
+      fontSize: (typography?.largeHeader?.fontSize || 18) + 2,
       fontFamily: 'DMSerifDisplay_400Regular',
       fontWeight: '600',
     },

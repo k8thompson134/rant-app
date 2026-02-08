@@ -20,8 +20,8 @@ import { useTheme, useTypography, useTouchTargetSize } from '../contexts/Accessi
 import { ExportFormat, DateRangePreset, RantEntry } from '../types';
 import {
   exportAndShare,
-  filterEntriesByDateRange,
-  getDateRangeFromPreset,
+  filterEntriesByExportDateRange,
+  getExportDateRangeFromPreset,
 } from '../utils/exportData';
 
 interface ExportDataModalProps {
@@ -44,8 +44,8 @@ export function ExportDataModal({ visible, onClose, entries }: ExportDataModalPr
 
   // Calculate filtered entries
   const filteredEntries = useMemo(() => {
-    const dateRange = getDateRangeFromPreset(selectedDateRange);
-    return filterEntriesByDateRange(entries, dateRange);
+    const dateRange = getExportDateRangeFromPreset(selectedDateRange);
+    return filterEntriesByExportDateRange(entries, dateRange);
   }, [entries, selectedDateRange]);
 
   const handleExport = async () => {
@@ -91,31 +91,26 @@ export function ExportDataModal({ visible, onClose, entries }: ExportDataModalPr
     }
   };
 
-  const formatOptions: {
-    value: ExportFormat;
-    label: string;
-    icon: string;
-    description: string;
-  }[] = [
+  const formatOptions = [
     {
-      value: 'txt',
+      value: 'txt' as const,
       label: 'Plain Text',
-      icon: 'document-text-outline',
+      icon: 'document-text-outline' as const,
       description: 'Easy to read and print',
     },
     {
-      value: 'csv',
+      value: 'csv' as const,
       label: 'Spreadsheet (CSV)',
-      icon: 'grid-outline',
+      icon: 'grid-outline' as const,
       description: 'Open in Excel or Google Sheets',
     },
     {
-      value: 'json',
+      value: 'json' as const,
       label: 'JSON Data',
-      icon: 'code-outline',
+      icon: 'code-outline' as const,
       description: 'Full data with all details',
     },
-  ];
+  ] as const;
 
   const dateRangeOptions: { value: DateRangePreset; label: string; description: string }[] = [
     {
@@ -126,12 +121,12 @@ export function ExportDataModal({ visible, onClose, entries }: ExportDataModalPr
     {
       value: 'last_30_days',
       label: 'Last 30 Days',
-      description: `${filterEntriesByDateRange(entries, getDateRangeFromPreset('last_30_days')).length} entries`,
+      description: `${filterEntriesByExportDateRange(entries, getExportDateRangeFromPreset('last_30_days')).length} entries`,
     },
     {
       value: 'last_90_days',
       label: 'Last 90 Days',
-      description: `${filterEntriesByDateRange(entries, getDateRangeFromPreset('last_90_days')).length} entries`,
+      description: `${filterEntriesByExportDateRange(entries, getExportDateRangeFromPreset('last_90_days')).length} entries`,
     },
   ];
 
@@ -181,7 +176,7 @@ export function ExportDataModal({ visible, onClose, entries }: ExportDataModalPr
               >
                 <View style={styles.optionIcon}>
                   <Ionicons
-                    name={option.icon as any}
+                    name={option.icon}
                     size={24}
                     color={
                       selectedFormat === option.value

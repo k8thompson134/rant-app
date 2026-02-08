@@ -214,7 +214,7 @@ describe('Confidence Scoring Tests', () => {
       );
 
       const patternConf = calculateConfidence(
-        { symptom: 'pain', matched: 'sharp pain', method: 'pattern', severity: 'moderate' },
+        { symptom: 'pain', matched: 'sharp pain', method: 'phrase', severity: 'moderate' },
         'sharp pain in my back',
         0
       );
@@ -287,7 +287,6 @@ describe('Confidence Scoring Tests', () => {
         painDetails: {
           qualifiers: ['sharp'],
           location: 'back',
-          severity: 'severe',
         },
       };
 
@@ -306,7 +305,6 @@ describe('Confidence Scoring Tests', () => {
         painDetails: {
           qualifiers: ['burning'],
           location: 'back',
-          severity: 'severe',
         },
       };
 
@@ -318,7 +316,6 @@ describe('Confidence Scoring Tests', () => {
         painDetails: {
           qualifiers: ['sharp', 'burning'],
           location: 'back',
-          severity: 'severe',
         },
       };
 
@@ -347,7 +344,7 @@ describe('Confidence Scoring Tests', () => {
         matched: 'exhausted',
         method: 'lemma',
         severity: 'moderate',
-        trigger: { activity: 'shopping_triggered', type: 'activity' },
+        trigger: { activity: 'shopping_triggered' },
       };
 
       const withoutConf = calculateConfidence(withoutTrigger, 'I am exhausted', 0);
@@ -391,7 +388,7 @@ describe('Confidence Scoring Tests', () => {
         matched: 'migraine',
         method: 'lemma',
         severity: 'severe',
-        timeOfDay: ['morning'],
+        timeOfDay: 'morning',
       };
 
       const withoutConf = calculateConfidence(withoutTime, 'I have migraines', 0);
@@ -443,11 +440,10 @@ describe('Confidence Scoring Tests', () => {
         painDetails: {
           qualifiers: ['sharp', 'stabbing'],
           location: 'back',
-          severity: 'severe',
         },
-        trigger: { activity: 'standing', type: 'activity' },
+        trigger: { activity: 'standing' },
         duration: { value: 2, unit: 'hours' },
-        timeOfDay: ['afternoon'],
+        timeOfDay: 'afternoon',
       };
 
       const conf = calculateConfidence(symptom, 'After standing for too long, I have severe sharp stabbing pain in my back', 30);
@@ -476,11 +472,10 @@ describe('Confidence Scoring Tests', () => {
         painDetails: {
           qualifiers: ['sharp', 'stabbing'],
           location: 'lower_back',
-          severity: 'severe',
         },
-        trigger: { activity: 'prolonged_standing', type: 'activity' },
+        trigger: { activity: 'prolonged_standing' },
         duration: { value: 4, unit: 'hours' },
-        timeOfDay: ['afternoon', 'evening'],
+        timeOfDay: 'afternoon',
       };
 
       const conf = calculateConfidence(

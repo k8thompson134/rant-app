@@ -8,7 +8,7 @@
  * 4. Drag-and-drop symptom reassignment between days
  */
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -40,7 +40,15 @@ export default function CatchUpScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSegmentAdded, setShowSegmentAdded] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const segmentTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const touchTargetSize = useTouchTargetSize();
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (segmentTimerRef.current) clearTimeout(segmentTimerRef.current);
+    };
+  }, []);
 
   // Memoize styles with theme tokens
   const styles = useMemo(() => createStyles(darkTheme, touchTargetSize), [touchTargetSize]);
@@ -52,8 +60,9 @@ export default function CatchUpScreen() {
       setAccumulatedText((prev) => prev ? `${prev} ${text}` : text);
 
       // Show brief confirmation that segment was added
+      if (segmentTimerRef.current) clearTimeout(segmentTimerRef.current);
       setShowSegmentAdded(true);
-      setTimeout(() => setShowSegmentAdded(false), 2000);
+      segmentTimerRef.current = setTimeout(() => setShowSegmentAdded(false), 2000);
     }
   };
 

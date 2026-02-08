@@ -64,21 +64,19 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   // Detect system reduced motion preference
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (enabled && !settings.reducedMotion) {
+      if (enabled) {
         updateSetting('reducedMotion', true);
       }
     });
 
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
-      if (enabled !== settings.reducedMotion) {
-        updateSetting('reducedMotion', enabled);
-      }
+      updateSetting('reducedMotion', enabled);
     });
 
     return () => {
       subscription.remove();
     };
-  }, [settings.reducedMotion]);
+  }, []);
 
   const loadSettings = async () => {
     try {

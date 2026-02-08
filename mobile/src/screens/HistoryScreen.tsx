@@ -197,6 +197,11 @@ export function HistoryScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        initialNumToRender={15}
+        maxToRenderPerBatch={25}
+        updateCellsBatchingPeriod={50}
+        windowSize={21}
+        removeClippedSubviews={true}
       />
     </View>
   );

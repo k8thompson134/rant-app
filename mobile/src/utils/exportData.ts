@@ -6,7 +6,7 @@
 
 import { Paths, File, Directory } from 'expo-file-system';
 import { RantEntry } from '../types';
-import { ExportFormat, ExportExportDateRange, ExportResult } from '../types';
+import { ExportFormat, ExportDateRange, ExportResult } from '../types';
 
 /**
  * Format date for human readability

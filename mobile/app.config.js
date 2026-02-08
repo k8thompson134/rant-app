@@ -47,6 +47,7 @@ module.exports = {
           "RantTrack needs speech recognition to convert your voice into text for symptom tracking.",
         NSMicrophoneUsageDescription:
           "RantTrack needs microphone access to record your voice for symptom tracking.",
+        ITSAppUsesNonExemptEncryption: false,
       },
     },
     android: {

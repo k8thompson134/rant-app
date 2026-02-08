@@ -499,6 +499,10 @@ export function DictionaryScreen() {
                 </TouchableOpacity>
               )}
               style={styles.pickerList}
+              initialNumToRender={10}
+              maxToRenderPerBatch={20}
+              updateCellsBatchingPeriod={50}
+              removeClippedSubviews={true}
             />
           </View>
         </View>
@@ -584,7 +588,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>, colors: Retu
     flex: 1,
   },
   subheading: {
-    ...typography.header,
+    ...typography.largeHeader,
     color: colors.textPrimary,
     marginTop: 24,
     marginBottom: 12,
@@ -753,7 +757,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>, colors: Retu
     marginTop: 24,
   },
   emptyStateText: {
-    ...typography.header,
+    ...typography.largeHeader,
     color: colors.textMuted,
     marginTop: 16,
   },
@@ -788,7 +792,7 @@ const createStyles = (typography: ReturnType<typeof useTypography>, colors: Retu
     borderBottomColor: colors.bgElevated,
   },
   pickerTitle: {
-    ...typography.header,
+    ...typography.largeHeader,
     color: colors.textPrimary,
   },
   pickerList: {

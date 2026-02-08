@@ -9,6 +9,18 @@ import { desc, eq, and, gte, lte, count } from 'drizzle-orm';
 import { RantEntry, ExtractedSymptom, DateRangeFilter, ResolvedDateRange, CustomLemmaEntry } from '../types';
 
 /**
+ * Safely parse JSON symptoms, returning empty array on corruption
+ */
+function safeParseSymptoms(json: string, entryId: string): ExtractedSymptom[] {
+  try {
+    return JSON.parse(json) as ExtractedSymptom[];
+  } catch (error) {
+    console.error(`Corrupted symptoms JSON in entry ${entryId}:`, error);
+    return [];
+  }
+}
+
+/**
  * Generate a unique ID for a rant entry
  */
 function generateId(): string {
@@ -111,7 +123,7 @@ export async function getAllRantEntries(): Promise<RantEntry[]> {
       id: row.id,
       text: row.text,
       timestamp: row.timestamp,
-      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+      symptoms: safeParseSymptoms(row.symptoms, row.id),
     }));
   } catch (error) {
     console.error('Failed to get rant entries:', error);
@@ -143,7 +155,7 @@ export async function getRantEntryById(id: string): Promise<RantEntry | null> {
       id: row.id,
       text: row.text,
       timestamp: row.timestamp,
-      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+      symptoms: safeParseSymptoms(row.symptoms, row.id),
     };
   } catch (error) {
     console.error('Failed to get rant entry:', error);
@@ -190,7 +202,7 @@ export async function getRecentRantEntries(days: number = 7): Promise<RantEntry[
       id: row.id,
       text: row.text,
       timestamp: row.timestamp,
-      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+      symptoms: safeParseSymptoms(row.symptoms, row.id),
     }));
   } catch (error) {
     console.error('Failed to get recent rant entries:', error);
@@ -229,7 +241,7 @@ export async function getEntriesForMonth(year: number, month: number): Promise<R
       id: row.id,
       text: row.text,
       timestamp: row.timestamp,
-      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+      symptoms: safeParseSymptoms(row.symptoms, row.id),
     }));
   } catch (error) {
     console.error('Failed to get entries for month:', error);
@@ -270,17 +282,18 @@ export async function saveDraftEntry(
   }
 
   try {
-    // First, clear any existing draft
-    await clearDraftEntry();
-
-    // Create new draft
     const draftId = `draft_${Date.now()}`;
-    await db!.insert(rants).values({
-      id: draftId,
-      text,
-      timestamp: Date.now(),
-      symptoms: JSON.stringify(symptoms),
-      isDraft: true,
+
+    // Atomic clear+insert prevents race condition with rapid auto-saves
+    await db!.transaction(async (tx) => {
+      await tx.delete(rants).where(eq(rants.isDraft, true));
+      await tx.insert(rants).values({
+        id: draftId,
+        text,
+        timestamp: Date.now(),
+        symptoms: JSON.stringify(symptoms),
+        isDraft: true,
+      });
     });
 
     console.log('Draft saved:', draftId);
@@ -317,7 +330,7 @@ export async function getDraftEntry(): Promise<RantEntry | null> {
       id: row.id,
       text: row.text,
       timestamp: row.timestamp,
-      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+      symptoms: safeParseSymptoms(row.symptoms, row.id),
     };
   } catch (error) {
     console.error('Failed to get draft entry:', error);
@@ -506,13 +519,14 @@ export async function getRantEntriesByDateRange(
           lte(rants.timestamp, endTimestamp)
         )
       )
-      .orderBy(desc(rants.timestamp));
+      .orderBy(desc(rants.timestamp))
+      .limit(10000);
 
     return results.map((row) => ({
       id: row.id,
       text: row.text,
       timestamp: row.timestamp,
-      symptoms: JSON.parse(row.symptoms) as ExtractedSymptom[],
+      symptoms: safeParseSymptoms(row.symptoms, row.id),
     }));
   } catch (error) {
     console.error('Failed to get entries by date range:', error);

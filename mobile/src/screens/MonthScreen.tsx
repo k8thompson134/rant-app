@@ -59,15 +59,7 @@ export function MonthScreen({ navigation }: Props) {
   const [editingSymptomId, setEditingSymptomId] = useState<string | null>(null);
   const [showAddSymptomModal, setShowAddSymptomModal] = useState(false);
 
-  // Load entries on focus (covers both initial mount and returning to screen).
-  // Depends on currentDate so month changes also trigger a reload.
-  useFocusEffect(
-    useCallback(() => {
-      loadEntries();
-    }, [currentDate])
-  );
-
-  const loadEntries = async () => {
+  const loadEntries = useCallback(async () => {
     try {
       const allEntries = await getEntriesForMonth(
         currentDate.getFullYear(),
@@ -82,7 +74,15 @@ export function MonthScreen({ navigation }: Props) {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [currentDate, selectedDay]);
+
+  // Load entries on focus (covers both initial mount and returning to screen).
+  // Depends on currentDate and selectedDay so changes trigger a reload.
+  useFocusEffect(
+    useCallback(() => {
+      loadEntries();
+    }, [loadEntries])
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -571,6 +571,11 @@ export function MonthScreen({ navigation }: Props) {
                 />
               }
               showsVerticalScrollIndicator={false}
+              initialNumToRender={15}
+              maxToRenderPerBatch={25}
+              updateCellsBatchingPeriod={50}
+              windowSize={21}
+              removeClippedSubviews={true}
             />
           )}
         </View>
