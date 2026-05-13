@@ -30,6 +30,7 @@ import { SymptomChip } from '../components/SymptomChip';
 import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
 import { AddSymptomModal } from '../components/AddSymptomModal';
 import { SpoonCountDisplay } from '../components/SpoonCountDisplay';
+import { FunctionalCapacityDisplay } from '../components/FunctionalCapacityDisplay';
 import { useTouchTargetSize, useTheme, useTypography } from '../contexts/AccessibilityContext';
 import { TOUCH_TARGET_SPACING } from '../constants/accessibility';
 
@@ -134,9 +135,19 @@ export function ReviewEntryScreen({ route, navigation }: Props) {
           <Text style={styles.date}>{formatDate()}</Text>
         </View>
 
-        {/* Spoon Count Display */}
-        {extractionResult.spoonCount && (
-          <SpoonCountDisplay spoonCount={extractionResult.spoonCount} />
+        {/* Energy Display: Spoon Count + Functional Capacity */}
+        {(extractionResult.spoonCount || extractionResult.functionalCapacity) && (
+          <View style={styles.energySection}>
+            {extractionResult.spoonCount && (
+              <SpoonCountDisplay spoonCount={extractionResult.spoonCount} />
+            )}
+            {extractionResult.functionalCapacity && (
+              <FunctionalCapacityDisplay
+                capacity={extractionResult.functionalCapacity}
+                editable={false}
+              />
+            )}
+          </View>
         )}
 
         {/* Quick Summary - All Symptoms */}
@@ -354,6 +365,9 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   date: {
     ...typography.sectionHeader,
     color: colors.textSecondary,
+  },
+  energySection: {
+    gap: 12,
   },
   // Quick Summary Card
   summaryCard: {

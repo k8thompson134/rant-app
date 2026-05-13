@@ -13,6 +13,33 @@ import {
   MUSCLE_LOCATIONS,
 } from './dictionaries/symptoms';
 
+const DESCRIPTOR_SEVERITY: Record<string, 'mild' | 'moderate' | 'severe'> = {
+  slight: 'mild',
+  mild: 'mild',
+  nagging: 'mild',
+  dull: 'mild',
+  tender: 'mild',
+  sore: 'mild',
+  throbbing: 'moderate',
+  cramping: 'moderate',
+  aching: 'moderate',
+  stiff: 'moderate',
+  tight: 'moderate',
+  radiating: 'moderate',
+  shooting: 'severe',
+  stabbing: 'severe',
+  excruciating: 'severe',
+  unbearable: 'severe',
+  electric: 'severe',
+  burning: 'severe',
+  agonizing: 'severe',
+};
+
+const COLLOQUIAL_DESCRIPTOR_MAP: Array<{ pattern: RegExp; qualifiers: string[]; severity?: 'mild' | 'moderate' | 'severe' }> = [
+  { pattern: /\bpinched nerve\b/, qualifiers: ['sharp', 'localized'], severity: 'severe' },
+  { pattern: /\bcharl(?:ie|ey)\s+horse\b/, qualifiers: ['cramping', 'muscular'], severity: 'moderate' },
+];
+
 /**
  * Helper function to find location in dictionaries (checks priority order)
  * Checks JOINT_LOCATIONS first (most specific), then MUSCLE_LOCATIONS, then BODY_PARTS
@@ -22,6 +49,49 @@ function findLocationInDictionaries(phrase: string): string | null {
   if (MUSCLE_LOCATIONS[phrase]) return MUSCLE_LOCATIONS[phrase];
   if (BODY_PARTS[phrase]) return BODY_PARTS[phrase];
   return null;
+}
+
+function getPhrase(tokens: string[], start: number, length: number): string {
+  return tokens.slice(start, start + length).join(' ');
+}
+
+function inferSeverityFromQualifiers(qualifiers: string[]): 'mild' | 'moderate' | 'severe' | null {
+  let score = 0;
+  for (const q of qualifiers) {
+    const sev = DESCRIPTOR_SEVERITY[q];
+    if (sev === 'severe') score += 3;
+    if (sev === 'moderate') score += 2;
+    if (sev === 'mild') score += 1;
+  }
+  if (score >= 3) return 'severe';
+  if (score >= 2) return 'moderate';
+  if (score >= 1) return 'mild';
+  return null;
+}
+
+function findBestLocation(tokens: string[], anchor: number): { location: string | null; endIndex: number } {
+  const lookbackStart = Math.max(0, anchor - 12);
+  const lookforwardEnd = Math.min(tokens.length, anchor + 16);
+
+  // Prefer context after the anchor, but allow before for patterns like "back pain"
+  const windows: Array<{ start: number; end: number }> = [
+    { start: anchor, end: lookforwardEnd },
+    { start: lookbackStart, end: anchor },
+  ];
+
+  for (const w of windows) {
+    for (let len = 4; len >= 1; len--) {
+      for (let i = w.start; i <= w.end - len; i++) {
+        const phrase = getPhrase(tokens, i, len);
+        const foundLocation = findLocationInDictionaries(phrase);
+        if (foundLocation) {
+          return { location: foundLocation, endIndex: i + len - 1 };
+        }
+      }
+    }
+  }
+
+  return { location: null, endIndex: anchor };
 }
 
 /**
@@ -48,6 +118,8 @@ export function extractPainDetailsFromTokens(tokens: string[]): Array<{
 
   // Pain-related words that trigger pain detail extraction
   const painWords = new Set(['pain', 'hurt', 'hurts', 'hurting', 'ache', 'aches', 'aching', 'sore', 'soreness']);
+  const tokenText = tokens.join(' ');
+  const phraseQualifierLens = [3, 2];
 
   // Find all pain mentions in the text
   for (let i = 0; i < tokens.length; i++) {
@@ -75,6 +147,16 @@ export function extractPainDetailsFromTokens(tokens: string[]): Array<{
           startIndex = j;
         }
 
+        for (const phraseLen of phraseQualifierLens) {
+          if (j - phraseLen + 1 < 0) continue;
+          const phrase = getPhrase(tokens, j - phraseLen + 1, phraseLen);
+          const mapped = PAIN_QUALIFIERS[phrase];
+          if (mapped) {
+            qualifiers.unshift(mapped);
+            startIndex = Math.min(startIndex, j - phraseLen + 1);
+          }
+        }
+
         // Check for severity indicators
         if (SEVERITY_INDICATORS[prevToken]) {
           severity = SEVERITY_INDICATORS[prevToken];
@@ -87,40 +169,33 @@ export function extractPainDetailsFromTokens(tokens: string[]): Array<{
         qualifiers.push(PAIN_QUALIFIERS[token]);
       }
 
-      // Search forward for body parts (within 7 tokens)
-      const lookforwardEnd = Math.min(tokens.length, i + 8);
-      for (let j = i; j < lookforwardEnd; j++) {
-        const nextToken = tokens[j];
+      // Search for body parts in a wider local window (after + before anchor)
+      const locationMatch = findBestLocation(tokens, i);
+      location = locationMatch.location;
+      endIndex = Math.max(endIndex, locationMatch.endIndex);
 
-        // Check for 3-word phrases first (most specific)
-        if (j < tokens.length - 2) {
-          const threeWordPhrase = `${nextToken} ${tokens[j + 1]} ${tokens[j + 2]}`;
-          const foundLocation = findLocationInDictionaries(threeWordPhrase);
-          if (foundLocation) {
-            location = foundLocation;
-            endIndex = j + 2;
-            break;
-          }
+      // Look for multi-word qualifiers close to anchor (e.g., "sharp burning", "dull ache")
+      const nearStart = Math.max(0, i - 6);
+      const nearEnd = Math.min(tokens.length, i + 6);
+      for (let j = nearStart; j < nearEnd; j++) {
+        for (const phraseLen of phraseQualifierLens) {
+          if (j + phraseLen > tokens.length) continue;
+          const phrase = getPhrase(tokens, j, phraseLen);
+          const mapped = PAIN_QUALIFIERS[phrase];
+          if (mapped) qualifiers.push(mapped);
         }
+      }
 
-        // Check for 2-word phrases (e.g., "upper back", "lower back")
-        if (j < tokens.length - 1) {
-          const twoWordPhrase = `${nextToken} ${tokens[j + 1]}`;
-          const foundLocation = findLocationInDictionaries(twoWordPhrase);
-          if (foundLocation) {
-            location = foundLocation;
-            endIndex = j + 1;
-            break;
-          }
+      // Colloquial mappings (pinched nerve, charlie horse)
+      for (const mapping of COLLOQUIAL_DESCRIPTOR_MAP) {
+        if (mapping.pattern.test(tokenText)) {
+          qualifiers.push(...mapping.qualifiers);
+          if (!severity && mapping.severity) severity = mapping.severity;
         }
+      }
 
-        // Check for single-word body parts (least specific)
-        const foundLocation = findLocationInDictionaries(nextToken);
-        if (foundLocation) {
-          location = foundLocation;
-          endIndex = j;
-          break;
-        }
+      if (!severity) {
+        severity = inferSeverityFromQualifiers(qualifiers);
       }
 
       // Only add if we found qualifiers or location (otherwise it's just generic pain)

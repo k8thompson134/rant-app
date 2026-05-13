@@ -30,6 +30,8 @@ import { SymptomDetailEditor } from '../components/SymptomDetailEditor';
 import { AddSymptomModal } from '../components/AddSymptomModal';
 import { SymptomListItem } from '../components/SymptomListItem';
 import type { MonthStackParamList } from '../types/navigation';
+import { PhysicalCapacityTier, CognitiveCapacityTier } from '../types';
+import { getPhysicalTierColor, getCognitiveTierColor } from '../utils/capacityTierUtils';
 
 type Props = NativeStackScreenProps<MonthStackParamList, 'MonthView'>;
 
@@ -37,6 +39,8 @@ interface CalendarDay {
   day: number;
   severity?: 'good' | 'moderate' | 'rough' | 'none';
   isToday?: boolean;
+  physicalTier?: PhysicalCapacityTier;
+  cognitiveTier?: CognitiveCapacityTier;
 }
 
 type ViewMode = 'calendar' | 'list';
@@ -244,6 +248,9 @@ export function MonthScreen({ navigation }: Props) {
       );
 
       let severity: 'good' | 'moderate' | 'rough' | 'none' | undefined;
+      let physicalTier: PhysicalCapacityTier | undefined;
+      let cognitiveTier: CognitiveCapacityTier | undefined;
+
       if (dayEntries.length > 0) {
         // Get worst severity from all entries on this day
         const hasSevere = dayEntries.some(entry => getEntrySeverity(entry) === 'severe');
@@ -256,9 +263,20 @@ export function MonthScreen({ navigation }: Props) {
         } else {
           severity = 'good';
         }
+
+        // Get worst capacity tier (if multiple entries, use the most limited)
+        const capacities = dayEntries
+          .filter(e => e.functionalCapacity)
+          .map(e => e.functionalCapacity!);
+
+        if (capacities.length > 0) {
+          // Use first entry's capacity (in practice, all same-day entries usually have similar capacity)
+          physicalTier = capacities[0].physical;
+          cognitiveTier = capacities[0].cognitive;
+        }
       }
 
-      days.push({ day, isToday, severity });
+      days.push({ day, isToday, severity, physicalTier, cognitiveTier });
     }
 
     return days;
@@ -445,16 +463,39 @@ export function MonthScreen({ navigation }: Props) {
                     style={[
                       styles.dayCircle,
                       dayData.isToday && styles.dayCircleToday,
-                      selectedDay === dayData.day && styles.dayCircleSelected
+                      selectedDay === dayData.day && styles.dayCircleSelected,
+                      dayData.physicalTier && {
+                        backgroundColor: getPhysicalTierColor(dayData.physicalTier, colors) + '10',
+                      }
                     ]}
                     accessible={true}
                     accessibilityRole="button"
-                    accessibilityLabel={`${currentDate.toLocaleDateString('en-US', { month: 'long' })} ${dayData.day}${dayData.isToday ? ', today' : ''}${dayData.severity ? `, ${dayData.severity} day` : ''}${selectedDay === dayData.day ? ', selected' : ''}`}
+                    accessibilityLabel={`${currentDate.toLocaleDateString('en-US', { month: 'long' })} ${dayData.day}${dayData.isToday ? ', today' : ''}${dayData.severity ? `, ${dayData.severity} day` : ''}${dayData.physicalTier ? `, P${dayData.physicalTier}, C${dayData.cognitiveTier}` : ''}${selectedDay === dayData.day ? ', selected' : ''}`}
                   >
                     <Text style={[
                       styles.dayNumber,
                       selectedDay === dayData.day && styles.dayNumberSelected
                     ]}>{dayData.day}</Text>
+
+                    {/* Capacity tiers */}
+                    {(dayData.physicalTier || dayData.cognitiveTier) && (
+                      <View style={styles.tierIndicators}>
+                        {dayData.physicalTier && (
+                          <Text style={[
+                            styles.tierIndicatorText,
+                            { color: getPhysicalTierColor(dayData.physicalTier, colors) }
+                          ]}>P</Text>
+                        )}
+                        {dayData.cognitiveTier && (
+                          <Text style={[
+                            styles.tierIndicatorText,
+                            { color: getCognitiveTierColor(dayData.cognitiveTier, colors) }
+                          ]}>C</Text>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Severity dot */}
                     {dayData.severity && (
                       <View style={[
                         styles.severityDot,
@@ -675,6 +716,15 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
   },
   dayNumberSelected: {
     color: colors.bgPrimary,
+    fontFamily: 'DMSans_700Bold',
+  },
+  tierIndicators: {
+    flexDirection: 'row',
+    gap: 2,
+    marginTop: 2,
+  },
+  tierIndicatorText: {
+    fontSize: 10,
     fontFamily: 'DMSans_700Bold',
   },
   severityDot: {

@@ -22,6 +22,7 @@ import {
 } from '../types';
 import { useTheme, useTypography, useTouchTargetSize } from '../contexts/AccessibilityContext';
 import { SymptomListItem } from '../components/SymptomListItem';
+import { getPhysicalTierColor, getCognitiveTierColor, getSensoryLoadIcon } from '../utils/capacityTierUtils';
 
 export function HistoryScreen() {
   const colors = useTheme();
@@ -140,6 +141,51 @@ export function HistoryScreen() {
         <Text style={styles.entryText} numberOfLines={3}>
           "{item.text}"
         </Text>
+
+        {/* Energy Capacity Badge */}
+        {item.functionalCapacity && (
+          <View style={styles.capacityBadgeContainer}>
+            <View
+              style={[
+                styles.capacityBadge,
+                { backgroundColor: getPhysicalTierColor(item.functionalCapacity.physical, colors) + '15' },
+              ]}
+            >
+              <Text style={[styles.capacityBadgeLabel, { color: colors.textMuted }]}>P</Text>
+              <Text
+                style={[
+                  styles.capacityBadgeValue,
+                  { color: getPhysicalTierColor(item.functionalCapacity.physical, colors) },
+                ]}
+              >
+                {item.functionalCapacity.physical}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.capacityBadge,
+                { backgroundColor: getCognitiveTierColor(item.functionalCapacity.cognitive, colors) + '15' },
+              ]}
+            >
+              <Text style={[styles.capacityBadgeLabel, { color: colors.textMuted }]}>C</Text>
+              <Text
+                style={[
+                  styles.capacityBadgeValue,
+                  { color: getCognitiveTierColor(item.functionalCapacity.cognitive, colors) },
+                ]}
+              >
+                {item.functionalCapacity.cognitive}
+              </Text>
+            </View>
+            {item.functionalCapacity.sensoryLoad?.active && (
+              <View style={[styles.capacityBadge, { backgroundColor: colors.severityRough + '15' }]}>
+                <Text style={styles.sensoryBadgeIcon}>
+                  {getSensoryLoadIcon(item.functionalCapacity.sensoryLoad)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {item.symptoms.length > 0 && (
           <View style={styles.symptomsList}>
@@ -268,6 +314,31 @@ const createStyles = (colors: ReturnType<typeof useTheme>, typography: ReturnTyp
     marginBottom: 14,
     lineHeight: 22,
     fontStyle: 'italic',
+  },
+  capacityBadgeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  capacityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  capacityBadgeLabel: {
+    ...typography.caption,
+    fontFamily: 'DMSans_700Bold',
+  },
+  capacityBadgeValue: {
+    ...typography.bodyMedium,
+    fontFamily: 'DMSans_600SemiBold',
+  },
+  sensoryBadgeIcon: {
+    fontSize: 16,
   },
   symptomsList: {
     gap: 8,
