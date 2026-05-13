@@ -8,6 +8,9 @@ import {
   extractOutcome,
   extractSensoryLoad,
   inferFunctionalCapacity,
+  registerPhysicalSignal,
+  registerCognitiveSignal,
+  clearCustomSignals,
 } from './energyTiers';
 
 describe('Physical Capacity Extraction', () => {
@@ -258,5 +261,51 @@ describe('Edge Cases', () => {
     expect(result?.physical).toBe('P2');
     expect(result?.cognitive).toBe('C4');
     expect(result?.sensoryLoad?.light).toBe(true);
+  });
+});
+
+describe('Custom Signal Registration (Personal Anchors)', () => {
+  afterEach(() => {
+    clearCustomSignals();
+  });
+
+  test('registers and prioritizes custom physical signals', () => {
+    registerPhysicalSignal('my special couch day', 'P1', 0.95);
+
+    const result = extractPhysicalCapacity('had my special couch day today');
+    expect(result?.tier).toBe('P1');
+    expect(result?.confidence).toBe(0.95);
+  });
+
+  test('registers and prioritizes custom cognitive signals', () => {
+    registerCognitiveSignal('brain all static', 'C0', 0.90);
+
+    const result = extractCognitiveCapacity('brain all static today, couldn\'t do anything');
+    expect(result?.tier).toBe('C0');
+    expect(result?.confidence).toBe(0.90);
+  });
+
+  test('custom signals override defaults', () => {
+    // Default shower = P3, but if user customizes it
+    registerPhysicalSignal('shower', 'P2', 0.95);
+
+    const result = extractPhysicalCapacity('took a shower');
+    expect(result?.tier).toBe('P2'); // Uses custom
+  });
+
+  test('handles case-insensitive custom signals', () => {
+    registerPhysicalSignal('COUCH PRISON', 'P0', 0.90);
+
+    const result = extractPhysicalCapacity('been in couch prison all day');
+    expect(result?.tier).toBe('P0');
+  });
+
+  test('multiple custom signals, highest confidence wins', () => {
+    registerPhysicalSignal('feeling rough', 'P1', 0.80);
+    registerPhysicalSignal('couch prison', 'P0', 0.95);
+
+    const result = extractPhysicalCapacity('feeling rough and in couch prison');
+    expect(result?.tier).toBe('P0');
+    expect(result?.confidence).toBe(0.95);
   });
 });

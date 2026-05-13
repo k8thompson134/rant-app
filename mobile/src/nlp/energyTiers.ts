@@ -8,6 +8,13 @@ import { FunctionalCapacity, PhysicalCapacityTier, CognitiveCapacityTier, Attemp
 import { tokenize } from './tokenizer';
 
 /**
+ * Custom signal maps - can be extended with user-specific language patterns
+ * These override defaults when matching
+ */
+let CUSTOM_PHYSICAL_SIGNALS: Record<string, { tier: PhysicalCapacityTier; confidence: number }> = {};
+let CUSTOM_COGNITIVE_SIGNALS: Record<string, { tier: CognitiveCapacityTier; confidence: number }> = {};
+
+/**
  * Physical capacity signals: what activities/states map to which P-tier
  * Key = phrase/activity, Value = { tier, confidence }
  */
@@ -214,6 +221,18 @@ export function extractPhysicalCapacity(text: string): { tier: PhysicalCapacityT
   const textLower = text.toLowerCase();
   let bestMatch: { tier: PhysicalCapacityTier; confidence: number } | null = null;
 
+  // Check custom signals first (highest priority)
+  const customPhraseMatches = Object.entries(CUSTOM_PHYSICAL_SIGNALS).filter(
+    ([phrase]) => textLower.includes(phrase)
+  );
+
+  if (customPhraseMatches.length > 0) {
+    return customPhraseMatches.reduce(
+      (best, [, data]) => (data.confidence > best.confidence ? data : best),
+      customPhraseMatches[0][1]
+    );
+  }
+
   // Check for multi-word phrases first (higher priority)
   const phraseMatches = Object.entries(PHYSICAL_SIGNALS).filter(
     ([phrase]) => phrase.length > 10 && textLower.includes(phrase)
@@ -247,6 +266,18 @@ export function extractPhysicalCapacity(text: string): { tier: PhysicalCapacityT
 export function extractCognitiveCapacity(text: string): { tier: CognitiveCapacityTier; confidence: number } | null {
   const textLower = text.toLowerCase();
   let bestMatch: { tier: CognitiveCapacityTier; confidence: number } | null = null;
+
+  // Check custom signals first (highest priority)
+  const customPhraseMatches = Object.entries(CUSTOM_COGNITIVE_SIGNALS).filter(
+    ([phrase]) => textLower.includes(phrase)
+  );
+
+  if (customPhraseMatches.length > 0) {
+    return customPhraseMatches.reduce(
+      (best, [, data]) => (data.confidence > best.confidence ? data : best),
+      customPhraseMatches[0][1]
+    );
+  }
 
   // Check for multi-word phrases first
   const phraseMatches = Object.entries(COGNITIVE_SIGNALS).filter(
@@ -334,6 +365,40 @@ export function extractActivity(text: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * Register custom physical capacity signals
+ * Use this to calibrate for user-specific language
+ * Example: registerPhysicalSignal("my special couch word", "P1", 0.9)
+ */
+export function registerPhysicalSignal(
+  phrase: string,
+  tier: PhysicalCapacityTier,
+  confidence: number = 0.9
+): void {
+  CUSTOM_PHYSICAL_SIGNALS[phrase.toLowerCase()] = { tier, confidence };
+}
+
+/**
+ * Register custom cognitive capacity signals
+ * Use this to calibrate for user-specific language
+ * Example: registerCognitiveSignal("brain go brrr", "C4", 0.85)
+ */
+export function registerCognitiveSignal(
+  phrase: string,
+  tier: CognitiveCapacityTier,
+  confidence: number = 0.9
+): void {
+  CUSTOM_COGNITIVE_SIGNALS[phrase.toLowerCase()] = { tier, confidence };
+}
+
+/**
+ * Clear custom signals (for testing or resetting)
+ */
+export function clearCustomSignals(): void {
+  CUSTOM_PHYSICAL_SIGNALS = {};
+  CUSTOM_COGNITIVE_SIGNALS = {};
 }
 
 /**
