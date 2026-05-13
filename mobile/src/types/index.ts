@@ -40,6 +40,74 @@ export {
 
 export type Severity = 'mild' | 'moderate' | 'severe';
 
+// ============================================================================
+// Energy & Functional Capacity Types (Dual-Axis Model)
+// ============================================================================
+
+/**
+ * Physical capacity tier: what the body can sustain doing
+ * Based on functional assessment, not perceived effort
+ */
+export type PhysicalCapacityTier =
+  | 'P-2'  // Very severe: bedbound 24/7, full care required
+  | 'P-1'  // Severe: bedbound most of day, basic self-care barely possible
+  | 'P0'   // Mostly bedbound: can't sustain sitting, minimal self-care
+  | 'P1'   // Couch-bound: upright on couch, self-care possible
+  | 'P2'   // Moving around home: can get up, basic movement possible
+  | 'P3'   // Light tasks: dishes, tidying, short tasks
+  | 'P4'   // Short errand: quick drive, be out briefly
+  | 'P5'   // Activity: went out and did something
+  | 'P+'   // Pacing: could do more but chose not to;
+
+/**
+ * Cognitive capacity tier: what the brain can process
+ * Based on actual engagement ability, not general tiredness
+ */
+export type CognitiveCapacityTier =
+  | 'C-1'  // Non-verbal/minimal: can't process language, light/sound intolerable
+  | 'C0'   // Minimal processing: overwhelming, no screens possible
+  | 'C1'   // Passive low-demand: comfort rewatches, ambient content
+  | 'C2'   // Active low-demand: familiar content, light scrolling
+  | 'C3'   // Engaged consumption: new shows, reading, conversation
+  | 'C4'   // Productive: writing, coding, focused work
+  | 'C+'   // Social/communicative: sustained back-and-forth conversation;
+
+/**
+ * Attempt-cost classification: what happened vs the outcome
+ */
+export type AttemptOutcome =
+  | 'completed'        // Did it without notable cost
+  | 'completed_cost'   // Did it, paid a cost after
+  | 'attempted'        // Tried, couldn't finish
+  | 'unable';           // Wanted to, couldn't attempt
+
+/**
+ * Sensory load flag: when sensory input is taxing capacity
+ * Distinct from physical/cognitive; acts as a modifier that lowers actual capacity
+ */
+export interface SensoryLoadFlag {
+  active: boolean;
+  light?: boolean;           // Light sensitivity active
+  sound?: boolean;           // Sound sensitivity active
+  combined?: boolean;        // Crowd overload / multi-sensory
+  smell?: boolean;           // Smell sensitivity active
+  touch?: boolean;           // Touch sensitivity / hyperesthesia
+  temperature?: boolean;     // Temperature regulation difficulty
+  severity?: 'elevated' | 'high';  // General sensory load intensity
+}
+
+/**
+ * Energy tracking across both axes
+ */
+export interface FunctionalCapacity {
+  physical: PhysicalCapacityTier;
+  cognitive: CognitiveCapacityTier;
+  outcome?: AttemptOutcome;      // What was attempted and whether it succeeded
+  activity?: string;              // The activity in question (e.g., "shower", "work")
+  sensoryLoad?: SensoryLoadFlag;  // Sensory input taxing capacity
+  notes?: string;                 // Optional user notes
+}
+
 export interface PainDetails {
   qualifiers: string[];  // e.g., ["burning", "sharp"]
   location: string | null;  // e.g., "shoulder", "calf"
@@ -93,7 +161,8 @@ export interface EditableSymptom extends ExtractedSymptom {
 export interface ExtractionResult {
   text: string;
   symptoms: ExtractedSymptom[];
-  spoonCount?: SpoonCount;  // Spoon theory energy tracking
+  spoonCount?: SpoonCount;  // Spoon theory energy tracking (legacy)
+  functionalCapacity?: FunctionalCapacity;  // Dual-axis energy tracking (new)
   repeatPrevious?: boolean;  // Flag for "same as yesterday" or similar catch-up phrases
 }
 
@@ -102,6 +171,7 @@ export interface RantEntry {
   text: string;
   timestamp: number;
   symptoms: ExtractedSymptom[];
+  functionalCapacity?: FunctionalCapacity;  // Energy tier data
 }
 
 // ============================================================================

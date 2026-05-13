@@ -15,6 +15,8 @@ export const rants = sqliteTable('rants', {
   timestamp: integer('timestamp').notNull(),
   // Store symptoms as JSON array
   symptoms: text('symptoms').notNull(), // JSON stringified array of ExtractedSymptom[]
+  // Store functional capacity (dual-axis energy tracking)
+  functionalCapacity: text('functional_capacity'), // JSON stringified FunctionalCapacity
   // Draft flag for auto-save functionality
   isDraft: integer('is_draft', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at')

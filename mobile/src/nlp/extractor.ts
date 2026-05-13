@@ -30,6 +30,7 @@ import { extractNumericSeverity, findSeverity, findSeverityFromTokens, assignDef
 import { extractPainDetails } from './painDetails';
 import { extractSpoonCount } from './spoonCount';
 import { extractActivityTriggers, linkTriggersToSymptoms } from './activityTriggers';
+import { inferFunctionalCapacity } from './energyTiers';
 import { addConfidenceScores } from './confidence';
 import { addTemporalInfo } from './temporal';
 import { applyContextFilter, resolveSymptomConflicts } from './contextFilter';
@@ -53,6 +54,7 @@ export {
 export { extractPainDetailsFromTokens, extractPainDetails } from './painDetails';
 export { extractSpoonCount } from './spoonCount';
 export { extractActivityTriggers, linkTriggersToSymptoms } from './activityTriggers';
+export { inferFunctionalCapacity, extractPhysicalCapacity, extractCognitiveCapacity, extractSensoryLoad } from './energyTiers';
 export { calculateConfidence } from './confidence';
 export { extractDuration, extractTimeOfDay, findTemporalMarkers } from './temporal';
 export { applyContextFilter, resolveSymptomConflicts, validateLemmaContext, isContextSensitiveLemma } from './contextFilter';
@@ -252,8 +254,11 @@ export function extractSymptoms(
   // Step 6: Add temporal info (duration and time of day)
   const symptomsWithTemporal = addTemporalInfo(symptomsConflictResolved, text);
 
-  // Step 7: Extract spoon count for energy tracking
+  // Step 7: Extract spoon count for energy tracking (legacy)
   const spoonCount = extractSpoonCount(text);
+
+  // Step 7.5: Extract functional capacity (dual-axis energy model)
+  const functionalCapacity = inferFunctionalCapacity(text);
 
   // Check for "same as yesterday" or similar catch-up patterns
   const repeatPreviousPatterns = [
@@ -268,6 +273,7 @@ export function extractSymptoms(
     text,
     symptoms: symptomsWithTemporal,
     spoonCount: spoonCount ?? undefined,
+    functionalCapacity: functionalCapacity ?? undefined,
     repeatPrevious: repeatPrevious || undefined,
   };
 }
