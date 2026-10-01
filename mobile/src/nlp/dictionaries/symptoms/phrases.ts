@@ -183,6 +183,7 @@ export const SYMPTOM_PHRASES: Record<string, string> = {
   'heart rate spiked': 'palpitations',
   'hr spiked': 'palpitations',
   'heart rate high': 'palpitations',
+  'high heart rate': 'palpitations',
   'resting heart rate high': 'palpitations',
   'heart rate upon standing': 'orthostatic',
   'hr on standing': 'orthostatic',
@@ -229,6 +230,8 @@ export const SYMPTOM_PHRASES: Record<string, string> = {
   'internal tremors': 'tremor',
   'internal vibrations': 'internal_vibrations',
   'inner trembling': 'tremor',
+  'shaky hands': 'tremor',
+  'tremoring hands': 'tremor',
 
   // === PAIN ===
   'killing me': 'pain',

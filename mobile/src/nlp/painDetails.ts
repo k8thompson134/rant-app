@@ -20,6 +20,7 @@ const DESCRIPTOR_SEVERITY: Record<string, 'mild' | 'moderate' | 'severe'> = {
   dull: 'mild',
   tender: 'mild',
   sore: 'mild',
+  itching: 'mild',
   throbbing: 'moderate',
   cramping: 'moderate',
   aching: 'moderate',
@@ -117,7 +118,7 @@ export function extractPainDetailsFromTokens(tokens: string[]): Array<{
   }> = [];
 
   // Pain-related words that trigger pain detail extraction
-  const painWords = new Set(['pain', 'hurt', 'hurts', 'hurting', 'ache', 'aches', 'aching', 'sore', 'soreness']);
+  const painWords = new Set(['pain', 'hurt', 'hurts', 'hurting', 'ache', 'aches', 'aching', 'sore', 'soreness', 'itching', 'itchy', 'itch', 'tingling', 'numbness', 'numb', 'burning', 'stinging', 'throbbing']);
   const tokenText = tokens.join(' ');
   const phraseQualifierLens = [3, 2];
 
