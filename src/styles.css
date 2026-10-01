@@ -27,8 +27,8 @@ textarea { width:100%; background:var(--panel); color:var(--text); border:1px so
 .stats div { background:var(--panel); border-radius:10px; padding:.7rem; text-align:center; }
 .stats strong { display:block; font-size:1.5rem; } .stats span { color:var(--muted); font-size:.8rem; }
 .bars { list-style:none; padding:0; margin:0; }
-.bars li { display:grid; grid-template-columns:9rem 1fr 2rem; gap:.6rem; align-items:center; margin:.35rem 0; }
+.bars li { display:grid; grid-template-columns:12rem 1fr 2rem; gap:.6rem; align-items:center; margin:.35rem 0; }
 .bar-track { background:var(--panel2); border-radius:999px; height:.7rem; overflow:hidden; } .bar-fill { display:block; height:100%; }
 .bar-n { color:var(--muted); text-align:right; }
 .sr { position:absolute; left:-9999px; }
-@media (max-width:480px) { .stats { grid-template-columns:repeat(2,1fr); } .bars li { grid-template-columns:6.5rem 1fr 2rem; } }
+@media (max-width:480px) { .stats { grid-template-columns:repeat(2,1fr); } .bars li { grid-template-columns:8.5rem 1fr 2rem; } }

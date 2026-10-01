@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { RantEntry, SYMPTOM_DISPLAY_NAMES } from '../types';
+import { RantEntry } from '../types';
+import { displayName } from '../utils/displayName';
 import { TimePeriod } from '../types/insights';
 import { calculateSymptomFrequency, filterEntriesByDateRange, getMonthSummary } from '../utils/trendAnalysis';
 import { getDateRangeForPeriod } from '../utils/dateUtils';
@@ -32,7 +33,7 @@ export default function Insights({ entries }: { entries: RantEntry[] }) {
           <ul className="bars">
             {freq.map((f) => (
               <li key={f.symptom}>
-                <span className="bar-label">{SYMPTOM_DISPLAY_NAMES[f.symptom] ?? f.symptom.replace(/_/g, ' ')}</span>
+                <span className="bar-label">{displayName(f.symptom)}</span>
                 <span className="bar-track"><span className="bar-fill" style={{ width: `${f.percentage}%`, background: f.color }} /></span>
                 <span className="bar-n">{f.count}</span>
               </li>
