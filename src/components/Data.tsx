@@ -13,6 +13,7 @@ const csvCell = (v: string) => `"${v.replace(/"/g, '""')}"`;
 export default function Data({ entries, onReplace }: { entries: RantEntry[]; onReplace: (e: RantEntry[]) => void }) {
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   const importFile = async (f: File) => {
     try {
@@ -44,7 +45,15 @@ export default function Data({ entries, onReplace }: { entries: RantEntry[]; onR
         <input ref={file} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importFile(e.target.files[0])} />
       </div>
       {msg && <p role="status">{msg}</p>}
-      <button className="danger" disabled={!entries.length} onClick={() => confirm('Delete all entries from this browser?') && onReplace([])}>Delete all entries</button>
+      {confirming ? (
+        <div className="row" role="alert">
+          <span>Delete all {entries.length} entries from this browser? Export first if you might want them.</span>
+          <button className="danger-solid" onClick={() => { onReplace([]); setConfirming(false); }}>Yes, delete all</button>
+          <button onClick={() => setConfirming(false)}>Cancel</button>
+        </div>
+      ) : (
+        <button className="danger" disabled={!entries.length} onClick={() => setConfirming(true)}>Delete all entries</button>
+      )}
     </section>
   );
 }

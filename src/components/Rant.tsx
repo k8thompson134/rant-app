@@ -3,6 +3,7 @@ import { analyze } from '../nlp/analyze';
 import { RantEntry } from '../types';
 import SymptomChip from './SymptomChip';
 import MetaLine from './MetaLine';
+import CheckIn from './CheckIn';
 
 type Recognition = {
   continuous: boolean; interimResults: boolean; lang: string;
@@ -84,6 +85,7 @@ export default function Rant({ onSave }: { onSave: (e: RantEntry) => void }) {
           <MetaLine metrics={result.metrics} activity={result.activity} />
         </div>
       )}
+      <CheckIn onSave={onSave} />
     </section>
   );
 }
