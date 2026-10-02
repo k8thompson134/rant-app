@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { extractSymptoms } from '../nlp/extractor';
+import { analyze } from '../nlp/analyze';
 import { RantEntry } from '../types';
 import SymptomChip from './SymptomChip';
+import MetaLine from './MetaLine';
 
 type Recognition = {
   continuous: boolean; interimResults: boolean; lang: string;
@@ -25,7 +26,7 @@ export default function Rant({ onSave }: { onSave: (e: RantEntry) => void }) {
   const [saved, setSaved] = useState(false);
   const rec = useRef<Recognition | null>(null);
 
-  const result = useMemo(() => (text.trim() ? extractSymptoms(text) : null), [text]);
+  const result = useMemo(() => (text.trim() ? analyze(text) : null), [text]);
 
   useEffect(() => () => rec.current?.stop(), []);
 
@@ -46,7 +47,7 @@ export default function Rant({ onSave }: { onSave: (e: RantEntry) => void }) {
 
   const save = () => {
     if (!result) return;
-    onSave({ id: crypto.randomUUID(), text, timestamp: Date.now(), symptoms: result.symptoms, functionalCapacity: result.functionalCapacity });
+    onSave({ id: crypto.randomUUID(), text, timestamp: Date.now(), symptoms: result.symptoms, functionalCapacity: result.functionalCapacity, metrics: result.metrics, activity: result.activity });
     setText('');
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -80,6 +81,7 @@ export default function Rant({ onSave }: { onSave: (e: RantEntry) => void }) {
           {result.symptoms.length === 0 ? <p className="muted">Nothing detected yet.</p> : (
             <div className="chips">{result.symptoms.map((s, i) => <SymptomChip key={s.symptom + i} s={s} />)}</div>
           )}
+          <MetaLine metrics={result.metrics} activity={result.activity} />
         </div>
       )}
     </section>

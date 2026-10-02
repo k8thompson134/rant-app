@@ -173,6 +173,8 @@ export interface RantEntry {
   timestamp: number;
   symptoms: ExtractedSymptom[];
   functionalCapacity?: FunctionalCapacity;  // Energy tier data
+  metrics?: { mood?: number; energy?: number; stress?: number; capacity?: number; medication?: 'taken' | 'skipped' };
+  activity?: { signals: string[]; intensity: 'low' | 'medium' | 'high' | null };
 }
 
 // ============================================================================

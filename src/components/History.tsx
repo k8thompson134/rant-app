@@ -1,5 +1,6 @@
 import { RantEntry } from '../types';
 import SymptomChip from './SymptomChip';
+import MetaLine from './MetaLine';
 
 export default function History({ entries, onDelete }: { entries: RantEntry[]; onDelete: (id: string) => void }) {
   if (entries.length === 0) return <p className="muted">No entries yet.</p>;
@@ -18,6 +19,7 @@ export default function History({ entries, onDelete }: { entries: RantEntry[]; o
               <time>{new Date(e.timestamp).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</time>
               <p>{e.text}</p>
               <div className="chips">{e.symptoms.map((s, i) => <SymptomChip key={s.symptom + i} s={s} />)}</div>
+              <MetaLine metrics={e.metrics} activity={e.activity} />
               <button className="link" onClick={() => onDelete(e.id)}>Delete</button>
             </article>
           ))}
