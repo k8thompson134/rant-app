@@ -89,10 +89,19 @@ function refine(symptoms: ExtractedSymptom[], text: string): ExtractedSymptom[] 
     cleaned.push(s);
   }
 
+  const withoutSubsumed = cleaned.filter((s) => {
+    const m = s.matched?.toLowerCase();
+    if (!m) return true;
+    return !cleaned.some((o) => {
+      const om = o.matched?.toLowerCase();
+      return o !== s && o.symptom !== s.symptom && om && om.length > m.length && new RegExp(`\\b${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(om);
+    });
+  });
+
   const specificLocations = new Set(
-    cleaned.filter((s) => s.symptom !== 'pain').map((s) => s.painDetails?.location).filter(Boolean)
+    withoutSubsumed.filter((s) => s.symptom !== 'pain').map((s) => s.painDetails?.location).filter(Boolean)
   );
-  return cleaned.filter((s) => s.symptom !== 'pain' || !s.painDetails?.location || !specificLocations.has(s.painDetails.location));
+  return withoutSubsumed.filter((s) => s.symptom !== 'pain' || !s.painDetails?.location || !specificLocations.has(s.painDetails.location));
 }
 
 export interface HealthMetrics {

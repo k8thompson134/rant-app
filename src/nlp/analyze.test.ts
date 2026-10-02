@@ -31,3 +31,12 @@ describe('metrics and activities', () => {
     expect(detectActivities('Just lying here')).toEqual({ signals: [], intensity: null });
   });
 });
+
+describe('subsumed matches', () => {
+  it('drops a lemma match contained in a longer phrase match', () => {
+    const names = analyze('heart racing, dizzy, then night sweats').symptoms.map((s) => s.symptom);
+    expect(names).toContain('night_sweats');
+    expect(names).not.toContain('sweating');
+    expect(analyze('I was sweating a lot').symptoms.map((s) => s.symptom)).toContain('sweating');
+  });
+});
