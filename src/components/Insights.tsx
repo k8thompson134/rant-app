@@ -4,16 +4,17 @@ import { displayName } from '../utils/displayName';
 import { TimePeriod } from '../types/insights';
 import { calculateSymptomFrequency, filterEntriesByDateRange, getMonthSummary } from '../utils/trendAnalysis';
 import { getDateRangeForPeriod } from '../utils/dateUtils';
+import WeeklyCapsule from './WeeklyCapsule';
 
 const PERIODS: TimePeriod[] = ['7d', '30d', '90d', 'all'];
 
 export default function Insights({ entries }: { entries: RantEntry[] }) {
   const [period, setPeriod] = useState<TimePeriod>('30d');
 
-  const { freq, summary, count } = useMemo(() => {
+  const { freq, summary, count, inRange } = useMemo(() => {
     const range = getDateRangeForPeriod(period);
     const inRange = filterEntriesByDateRange(entries, range);
-    return { freq: calculateSymptomFrequency(inRange).slice(0, 10), summary: getMonthSummary(inRange, new Date()), count: inRange.length };
+    return { freq: calculateSymptomFrequency(inRange).slice(0, 10), summary: getMonthSummary(inRange, new Date()), count: inRange.length, inRange };
   }, [entries, period]);
 
   return (
@@ -29,6 +30,7 @@ export default function Insights({ entries }: { entries: RantEntry[] }) {
             <div><strong>{summary.moderateDays}</strong><span>moderate days</span></div>
             <div><strong>{summary.roughDays}</strong><span>rough days</span></div>
           </div>
+          {period === '7d' && <WeeklyCapsule entries={inRange} />}
           <h2>Most frequent</h2>
           <ul className="bars">
             {freq.map((f) => (

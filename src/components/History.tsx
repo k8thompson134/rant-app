@@ -57,14 +57,27 @@ function EntryCard({ e, onDelete, onUpdate }: { e: RantEntry } & Omit<Props, 'en
 }
 
 export default function History({ entries, onDelete, onUpdate }: Props) {
+  const [query, setQuery] = useState('');
+
   if (entries.length === 0) return <p className="muted">No entries yet.</p>;
+
+  const q = query.toLowerCase().trim();
+  const filtered = q
+    ? entries.filter((e) =>
+        e.text.toLowerCase().includes(q) ||
+        e.symptoms.some((s) => s.symptom.toLowerCase().includes(q))
+      )
+    : entries;
+
   const byDay = new Map<string, RantEntry[]>();
-  for (const e of entries) {
+  for (const e of filtered) {
     const day = new Date(e.timestamp).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
     byDay.set(day, [...(byDay.get(day) ?? []), e]);
   }
   return (
     <section>
+      <input className="search" type="text" placeholder="Search entries..." value={query} onChange={(e) => setQuery(e.target.value)} />
+      {q && <p className="muted">Showing {filtered.length} of {entries.length} entries</p>}
       {[...byDay].map(([day, list]) => (
         <div key={day} className="day">
           <h2>{day}</h2>

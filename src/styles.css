@@ -1,4 +1,7 @@
 :root { --bg:#0D0D0D; --panel:#1C1917; --panel2:#292524; --text:#F5F5F4; --muted:#A8A29E; --accent:#ec9175; --ok:#9BB68E; }
+body.light { --bg:#F5EDE6; --panel:#FDF9F6; --panel2:#F8F1EA; --text:#2C2420; --muted:#6B5D54; --accent:#B5715A; --ok:#4A8F6F; }
+body.light .warning { background:#f5e6e0; border-color:#B5715A; }
+body.light .toast { background:var(--panel2); border-color:var(--muted); }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
 .app { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
@@ -40,6 +43,8 @@ button.danger-solid { background:#D4836A; color:#1C1917; font-weight:600; }
 .toast { position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--muted); border-radius:10px; padding:.6rem 1rem; display:flex; gap:.75rem; align-items:center; box-shadow:0 4px 16px #0008; }
 .toast button.link { color:var(--accent); }
 .edit-text { margin:.4rem 0; }
+.search { width:100%; background:var(--panel); color:var(--text); border:1px solid var(--panel2); border-radius:10px; padding:.6rem .8rem; font:inherit; margin-bottom:.75rem; }
+.search::placeholder { color:var(--muted); }
 .chip button { background:none; border:none; padding:0 .1rem; color:var(--muted); line-height:1; }
 .sliders label { display:grid; grid-template-columns:5rem 1fr 2rem; gap:.6rem; align-items:center; margin:.4rem 0; }
 .sliders input[type=range] { width:100%; accent-color:var(--accent); }
@@ -47,3 +52,11 @@ button.danger-solid { background:#D4836A; color:#1C1917; font-weight:600; }
 .chip-wrap { display:inline-flex; align-items:center; gap:.1rem; }
 .chip-x { background:none; border:none; color:var(--muted); padding:.1rem .4rem; border-radius:50%; font-size:1.1rem; line-height:1; }
 .chip-x:hover { color:var(--text); }
+.capsule { margin:1.25rem 0; }
+.capsule-grid { display:flex; flex-direction:column; gap:3px; }
+.capsule-row { display:grid; grid-template-columns:8rem repeat(7,1fr); gap:3px; align-items:center; }
+.capsule-label { font-size:.8rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.capsule-cell { aspect-ratio:1; border-radius:4px; min-height:1.2rem; }
+.capsule-day { text-align:center; font-size:.75rem; color:var(--muted); aspect-ratio:auto; }
+@media (max-width:480px) { .capsule-row { grid-template-columns:5rem repeat(7,1fr); } }
+.streak { color:var(--ok); font-weight:600; }
